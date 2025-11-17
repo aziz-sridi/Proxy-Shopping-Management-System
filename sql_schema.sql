@@ -77,6 +77,7 @@ CREATE TABLE payments (
     order_id INT NOT NULL REFERENCES orders(order_id) ON DELETE CASCADE,
     amount DECIMAL(10,2) NOT NULL,
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    username VARCHAR(100),
     payment_method VARCHAR(50),
     comment TEXT
 );

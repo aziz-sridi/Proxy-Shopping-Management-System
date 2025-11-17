@@ -21,6 +21,27 @@ public class PaymentDAO {
         }
     }
 
+    public void update(Payment p) throws SQLException {
+        String sql = "UPDATE payments SET amount = ?, payment_method = ?, comment = ? WHERE payment_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, p.getAmount());
+            ps.setString(2, p.getPaymentMethod());
+            ps.setString(3, p.getComment());
+            ps.setInt(4, p.getPaymentId());
+            ps.executeUpdate();
+        }
+    }
+
+    public void delete(int paymentId) throws SQLException {
+        String sql = "DELETE FROM payments WHERE payment_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, paymentId);
+            ps.executeUpdate();
+        }
+    }
+
     public double getTotalPaidForOrder(int orderId) throws SQLException {
         String sql = "SELECT COALESCE(SUM(amount),0) AS total FROM payments WHERE order_id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -31,6 +52,27 @@ public class PaymentDAO {
             }
         }
         return 0.0;
+    }
+
+    public List<Payment> findAll() throws SQLException {
+        List<Payment> list = new ArrayList<>();
+        String sql = "SELECT * FROM payments ORDER BY payment_date DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Payment p = new Payment();
+                p.setPaymentId(rs.getInt("payment_id"));
+                p.setOrderId(rs.getInt("order_id"));
+                p.setAmount(rs.getDouble("amount"));
+                Timestamp ts = rs.getTimestamp("payment_date");
+                if (ts != null) p.setPaymentDate(ts.toLocalDateTime());
+                p.setPaymentMethod(rs.getString("payment_method"));
+                p.setComment(rs.getString("comment"));
+                list.add(p);
+            }
+        }
+        return list;
     }
 
     public List<Payment> findByOrder(int orderId) throws SQLException {

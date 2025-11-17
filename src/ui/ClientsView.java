@@ -1,13 +1,14 @@
 package ui;
 
 import dao.ClientDAO;
+import dao.OrderDAO;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import model.Client;
 
 import java.sql.SQLException;
@@ -15,10 +16,21 @@ import java.sql.SQLException;
 public class ClientsView {
 
     private final ClientDAO clientDAO = new ClientDAO();
+    private final OrderDAO orderDAO = new OrderDAO();
+    private final ClientDialogs dialogs = new ClientDialogs(clientDAO, orderDAO);
+    private HistoryOpener historyOpener;
+
+    public ClientsView() {
+    }
+
+    public ClientsView(HistoryOpener historyOpener) {
+        this.historyOpener = historyOpener;
+    }
     private final ObservableList<Client> clientData = FXCollections.observableArrayList();
 
     public BorderPane getView() {
         TableView<Client> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
         TableColumn<Client, Number> colId = new TableColumn<>("ID");
         colId.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getClientId()));
@@ -32,120 +44,97 @@ public class ClientsView {
         TableColumn<Client, String> colSource = new TableColumn<>("Source");
         colSource.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getSource()));
 
-        table.getColumns().addAll(colId, colUsername, colPhone, colSource);
+        TableColumn<Client, Void> colOrder = new TableColumn<>("New Order");
+        colOrder.setCellFactory(col -> new TableCell<>() {
+            private final Button btn = new Button("+");
+            {
+                btn.getStyleClass().add("btn-primary");
+                btn.setOnAction(e -> {
+                    Client client = getTableView().getItems().get(getIndex());
+                    dialogs.showAddOrderDialog(client, ClientsView.this::showError);
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(btn);
+                }
+            }
+        });
+
+        TableColumn<Client, Void> colActions = new TableColumn<>("Actions");
+        colActions.setCellFactory(col -> new TableCell<Client, Void>() {
+            private final Button btnEdit = new Button("Edit");
+            private final Button btnDelete = new Button("Delete");
+            private final Button btnHistory = new Button("History");
+            private final HBox box = new HBox(5, btnEdit, btnDelete, btnHistory);
+
+            {
+                btnEdit.setOnAction(e -> {
+                    Client client = getTableView().getItems().get(getIndex());
+                    dialogs.showEditClientDialog(client, ClientsView.this::loadClients, ClientsView.this::showError);
+                });
+                btnDelete.setOnAction(e -> {
+                    Client client = getTableView().getItems().get(getIndex());
+                    deleteClient(client);
+                });
+                btnHistory.setOnAction(e -> {
+                    Client client = getTableView().getItems().get(getIndex());
+                    if (historyOpener != null) {
+                        historyOpener.open(client);
+                    }
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(box);
+                }
+            }
+        });
+
+        table.getColumns().clear();
+        table.getColumns().add(colId);
+        table.getColumns().add(colUsername);
+        table.getColumns().add(colPhone);
+        table.getColumns().add(colSource);
+        table.getColumns().add(colOrder);
+        table.getColumns().add(colActions);
         table.setItems(clientData);
 
-        TextField txtUsername = new TextField();
-        TextField txtPhone = new TextField();
-        ComboBox<String> cbSource = new ComboBox<>();
-        cbSource.getItems().addAll("facebook", "instagram", "whatsapp");
-        TextField txtAddress = new TextField();
+        TextField txtSearch = new TextField();
+        txtSearch.setPromptText("Search clients by name or phone...");
+        Button btnNewClient = new Button("+ New Client");
+        btnNewClient.setOnAction(e -> dialogs.showAddClientDialog(this::loadClients, this::showError));
+        HBox searchBar = new HBox(10, new Label("Search:"), txtSearch, btnNewClient);
+        searchBar.setPadding(new Insets(10));
+        HBox.setHgrow(txtSearch, Priority.ALWAYS);
 
-        Button btnAdd = new Button("Add Client");
-        btnAdd.setOnAction(e -> {
-            Client c = new Client();
-            c.setUsername(txtUsername.getText());
-            c.setPhone(txtPhone.getText());
-            c.setSource(cbSource.getValue());
-            c.setAddress(txtAddress.getText());
-            try {
-                clientDAO.insert(c);
+        txtSearch.textProperty().addListener((obs, oldVal, newVal) -> {
+            String keyword = newVal == null ? "" : newVal.trim();
+            clientData.clear();
+            if (keyword.isEmpty()) {
                 loadClients();
-                txtUsername.clear();
-                txtPhone.clear();
-                cbSource.getSelectionModel().clearSelection();
-                txtAddress.clear();
-            } catch (SQLException ex) {
-                showError(ex.getMessage());
-            }
-        });
-
-        Button btnUpdate = new Button("Update Selected");
-        btnUpdate.setOnAction(e -> {
-            Client selected = table.getSelectionModel().getSelectedItem();
-            if (selected == null) {
-                showError("Please select a client to update.");
-                return;
-            }
-            selected.setUsername(txtUsername.getText());
-            selected.setPhone(txtPhone.getText());
-            selected.setSource(cbSource.getValue());
-            selected.setAddress(txtAddress.getText());
-            try {
-                clientDAO.update(selected);
-                loadClients();
-            } catch (SQLException ex) {
-                showError(ex.getMessage());
-            }
-        });
-
-        Button btnDelete = new Button("Delete Selected");
-        btnDelete.setOnAction(e -> {
-            Client selected = table.getSelectionModel().getSelectedItem();
-            if (selected == null) {
-                showError("Please select a client to delete.");
-                return;
-            }
-            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete selected client?", ButtonType.YES, ButtonType.NO);
-            confirm.showAndWait();
-            if (confirm.getResult() == ButtonType.YES) {
+            } else {
                 try {
-                    clientDAO.delete(selected.getClientId());
-                    loadClients();
+                    clientData.addAll(clientDAO.findByUsernameOrPhone(keyword));
                 } catch (SQLException ex) {
                     showError(ex.getMessage());
                 }
             }
         });
 
-        TextField txtSearch = new TextField();
-        txtSearch.setPromptText("Search by username or phone");
-        Button btnSearch = new Button("Find");
-        btnSearch.setOnAction(e -> {
-            String keyword = txtSearch.getText();
-            if (keyword == null || keyword.trim().isEmpty()) {
-                loadClients();
-                return;
-            }
-            clientData.clear();
-            try {
-                clientData.addAll(clientDAO.findByUsernameOrPhone(keyword.trim()));
-            } catch (SQLException ex) {
-                showError(ex.getMessage());
-            }
-        });
-
-        table.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
-            if (newSel != null) {
-                txtUsername.setText(newSel.getUsername());
-                txtPhone.setText(newSel.getPhone());
-                cbSource.setValue(newSel.getSource());
-                txtAddress.setText(newSel.getAddress());
-            }
-        });
-
-        GridPane form = new GridPane();
-        form.setPadding(new Insets(10));
-        form.setHgap(5);
-        form.setVgap(5);
-        form.add(new Label("Username:"), 0, 0);
-        form.add(txtUsername, 1, 0);
-        form.add(new Label("Phone:"), 0, 1);
-        form.add(txtPhone, 1, 1);
-        form.add(new Label("Source:"), 0, 2);
-        form.add(cbSource, 1, 2);
-        form.add(new Label("Address:"), 0, 3);
-        form.add(txtAddress, 1, 3);
-
-        HBox actions = new HBox(5, btnAdd, btnUpdate, btnDelete);
-        form.add(actions, 1, 4);
-
-        HBox searchBox = new HBox(5, txtSearch, btnSearch);
-        form.add(searchBox, 1, 5);
-
         BorderPane root = new BorderPane();
+        root.setTop(searchBar);
         root.setCenter(table);
-        root.setBottom(form);
 
         loadClients();
         return root;
@@ -163,5 +152,23 @@ public class ClientsView {
     private void showError(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR, msg, ButtonType.OK);
         alert.showAndWait();
+    }
+
+
+    private void deleteClient(Client client) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete selected client?", ButtonType.YES, ButtonType.NO);
+        confirm.showAndWait();
+        if (confirm.getResult() == ButtonType.YES) {
+            try {
+                clientDAO.delete(client.getClientId());
+                loadClients();
+            } catch (SQLException e) {
+                showError(e.getMessage());
+            }
+        }
+    }
+
+    public interface HistoryOpener {
+        void open(Client client);
     }
 }

@@ -1,6 +1,5 @@
 package ui;
 
-import dao.OrderDAO;
 import dao.PaymentDAO;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -8,125 +7,111 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
-import model.Order;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import model.Payment;
 
 import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
 
 public class PaymentsView {
 
     private final PaymentDAO paymentDAO = new PaymentDAO();
-    private final OrderDAO orderDAO = new OrderDAO();
 
-    private final ObservableList<Order> orderData = FXCollections.observableArrayList();
     private final ObservableList<Payment> paymentData = FXCollections.observableArrayList();
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public BorderPane getView() {
-        TableView<Order> ordersTable = new TableView<>();
-
-        TableColumn<Order, Number> colId = new TableColumn<>("Order ID");
-        colId.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getOrderId()));
-
-        TableColumn<Order, Number> colSell = new TableColumn<>("Selling");
-        colSell.setCellValueFactory(c -> new javafx.beans.property.SimpleDoubleProperty(c.getValue().getSellingPrice()));
-
-        TableColumn<Order, String> colStatus = new TableColumn<>("Status");
-        colStatus.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getPaymentStatus()));
-
-        ordersTable.getColumns().addAll(colId, colSell, colStatus);
-        ordersTable.setItems(orderData);
-
         TableView<Payment> paymentsTable = new TableView<>();
+        paymentsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
         TableColumn<Payment, Number> colPayId = new TableColumn<>("ID");
         colPayId.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getPaymentId()));
 
+        TableColumn<Payment, Number> colOrderId = new TableColumn<>("Order ID");
+        colOrderId.setCellValueFactory(c -> new javafx.beans.property.SimpleIntegerProperty(c.getValue().getOrderId()));
+
         TableColumn<Payment, Number> colAmount = new TableColumn<>("Amount");
         colAmount.setCellValueFactory(c -> new javafx.beans.property.SimpleDoubleProperty(c.getValue().getAmount()));
+
+        TableColumn<Payment, String> colDate = new TableColumn<>("Date");
+        colDate.setCellValueFactory(c -> {
+            if (c.getValue().getPaymentDate() == null) return new javafx.beans.property.SimpleStringProperty("");
+            return new javafx.beans.property.SimpleStringProperty(c.getValue().getPaymentDate().format(dateFormatter));
+        });
 
         TableColumn<Payment, String> colMethod = new TableColumn<>("Method");
         colMethod.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getPaymentMethod()));
 
-        paymentsTable.getColumns().addAll(colPayId, colAmount, colMethod);
+        TableColumn<Payment, String> colComment = new TableColumn<>("Comment");
+        colComment.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getComment()));
+
+        TableColumn<Payment, Void> colActions = new TableColumn<>("Actions");
+        colActions.setCellFactory(col -> new TableCell<>() {
+            private final Button btnEdit = new Button("Edit");
+            private final Button btnDelete = new Button("Delete");
+            private final HBox box = new HBox(5, btnEdit, btnDelete);
+
+            {
+                btnEdit.setOnAction(e -> {
+                    Payment p = getTableView().getItems().get(getIndex());
+                    openEditPaymentDialog(p, () -> loadPayments(), PaymentsView.this::showError);
+                });
+                btnDelete.setOnAction(e -> {
+                    Payment p = getTableView().getItems().get(getIndex());
+                    deletePayment(p);
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(box);
+                }
+            }
+        });
+
+        paymentsTable.getColumns().clear();
+        paymentsTable.getColumns().add(colPayId);
+        paymentsTable.getColumns().add(colOrderId);
+        paymentsTable.getColumns().add(colAmount);
+        paymentsTable.getColumns().add(colDate);
+        paymentsTable.getColumns().add(colMethod);
+        paymentsTable.getColumns().add(colComment);
+        paymentsTable.getColumns().add(colActions);
         paymentsTable.setItems(paymentData);
 
-        TextField txtAmount = new TextField();
-        txtAmount.setPromptText("Amount");
+        TextField txtSearch = new TextField();
+        txtSearch.setPromptText("Search by method, comment or order ID...");
 
-        TextField txtMethod = new TextField();
-        txtMethod.setPromptText("Method");
-
-        TextField txtComment = new TextField();
-        txtComment.setPromptText("Comment");
-
-        Button btnAdd = new Button("Add Payment");
-        btnAdd.setOnAction(e -> {
-            Order selectedOrder = ordersTable.getSelectionModel().getSelectedItem();
-            if (selectedOrder == null) {
-                showError("Select an order first.");
-                return;
-            }
-            Payment p = new Payment();
-            p.setOrderId(selectedOrder.getOrderId());
-            try {
-                p.setAmount(Double.parseDouble(txtAmount.getText()));
-            } catch (NumberFormatException ex) {
-                showError("Invalid amount.");
-                return;
-            }
-            p.setPaymentMethod(txtMethod.getText());
-            p.setComment(txtComment.getText());
-            try {
-                paymentDAO.insert(p);
-                refreshPaymentsForOrder(selectedOrder);
-                refreshOrders();
-            } catch (SQLException ex) {
-                showError(ex.getMessage());
-            }
+        txtSearch.textProperty().addListener((obs, old, cur) -> {
+            String q = cur == null ? "" : cur.toLowerCase();
+            paymentsTable.setItems(paymentData.filtered(p -> {
+                if (q.isEmpty()) return true;
+                String combined = ("" + p.getPaymentMethod() + " " + p.getComment() + " " + p.getOrderId()).toLowerCase();
+                return combined.contains(q);
+            }));
         });
 
-        ordersTable.getSelectionModel().selectedItemProperty().addListener((obs, old, cur) -> {
-            if (cur != null) {
-                refreshPaymentsForOrder(cur);
-            }
-        });
-
-        GridPane form = new GridPane();
-        form.setPadding(new Insets(10));
-        form.setHgap(5);
-        form.setVgap(5);
-        form.add(new Label("Amount:"), 0, 0);
-        form.add(txtAmount, 1, 0);
-        form.add(new Label("Method:"), 0, 1);
-        form.add(txtMethod, 1, 1);
-        form.add(new Label("Comment:"), 0, 2);
-        form.add(txtComment, 1, 2);
-        form.add(btnAdd, 1, 3);
-
-        SplitPane split = new SplitPane(ordersTable, paymentsTable);
-        split.setDividerPositions(0.5);
+        HBox searchBar = new HBox(10, new Label("Search:"), txtSearch);
+        searchBar.setPadding(new Insets(10));
+        HBox.setHgrow(txtSearch, Priority.ALWAYS);
 
         BorderPane root = new BorderPane();
-        root.setCenter(split);
-        root.setBottom(form);
+        root.setTop(searchBar);
+        root.setCenter(paymentsTable);
 
-        refreshOrders();
+        loadPayments();
         return root;
     }
 
-    private void refreshOrders() {
-        orderData.clear();
-        try {
-            orderData.addAll(orderDAO.findAll());
-        } catch (SQLException e) {
-            showError(e.getMessage());
-        }
-    }
-
-    private void refreshPaymentsForOrder(Order order) {
+    private void loadPayments() {
         paymentData.clear();
         try {
-            paymentData.addAll(paymentDAO.findByOrder(order.getOrderId()));
+            paymentData.addAll(paymentDAO.findAll());
         } catch (SQLException e) {
             showError(e.getMessage());
         }
@@ -135,5 +120,70 @@ public class PaymentsView {
     private void showError(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR, msg, ButtonType.OK);
         alert.showAndWait();
+    }
+
+    private void deletePayment(Payment selected) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Delete selected payment?", ButtonType.YES, ButtonType.NO);
+        confirm.showAndWait().ifPresent(bt -> {
+            if (bt == ButtonType.YES) {
+                try {
+                    paymentDAO.delete(selected.getPaymentId());
+                    loadPayments();
+                } catch (SQLException ex) {
+                    showError(ex.getMessage());
+                }
+            }
+        });
+    }
+
+    private void openEditPaymentDialog(Payment payment, Runnable onSuccess, java.util.function.Consumer<String> onError) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Edit Payment");
+
+        TextField txtOrderId = new TextField(String.valueOf(payment.getOrderId()));
+        TextField txtAmount = new TextField(String.valueOf(payment.getAmount()));
+        TextField txtMethod = new TextField(payment.getPaymentMethod());
+        TextField txtComment = new TextField(payment.getComment());
+
+        GridPane form = new GridPane();
+        form.setPadding(new Insets(10));
+        form.setHgap(8);
+        form.setVgap(8);
+        form.setHgap(8);
+        form.setVgap(8);
+        form.add(new Label("Order ID:"), 0, 0);
+        form.add(txtOrderId, 1, 0);
+        form.add(new Label("Amount:"), 0, 1);
+        form.add(txtAmount, 1, 1);
+        form.add(new Label("Method:"), 0, 2);
+        form.add(txtMethod, 1, 2);
+        form.add(new Label("Comment:"), 0, 3);
+        form.add(txtComment, 1, 3);
+
+        dialog.getDialogPane().setContent(form);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(btn -> {
+            if (btn == ButtonType.OK) {
+                try {
+                    payment.setOrderId(Integer.parseInt(txtOrderId.getText()));
+                    payment.setAmount(Double.parseDouble(txtAmount.getText()));
+                } catch (NumberFormatException ex) {
+                    if (onError != null) onError.accept("Invalid numeric values.");
+                    return null;
+                }
+                payment.setPaymentMethod(txtMethod.getText());
+                payment.setComment(txtComment.getText());
+                try {
+                    paymentDAO.update(payment);
+                    if (onSuccess != null) onSuccess.run();
+                } catch (SQLException e) {
+                    if (onError != null) onError.accept(e.getMessage());
+                }
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
     }
 }

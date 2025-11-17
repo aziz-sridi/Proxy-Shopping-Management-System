@@ -12,7 +12,11 @@ public class MainView {
 
         Tab clientsTab = new Tab("Clients");
         clientsTab.setClosable(false);
-        clientsTab.setContent(new ClientsView().getView());
+        clientsTab.setContent(new ClientsView(client -> {
+            ClientHistoryView historyView = new ClientHistoryView();
+            tabPane.getTabs().add(createHistoryTab(historyView, client, tabPane));
+            tabPane.getSelectionModel().selectLast();
+        }).getView());
 
         Tab ordersTab = new Tab("Orders");
         ordersTab.setClosable(false);
@@ -32,8 +36,20 @@ public class MainView {
 
         tabPane.getTabs().addAll(clientsTab, ordersTab, shipmentsTab, paymentsTab, dashboardTab);
 
+        Scene scene = new Scene(tabPane, 1000, 700);
+
         stage.setTitle("Proxy Shopping Management System");
-        stage.setScene(new Scene(tabPane, 1000, 700));
+        stage.setScene(scene);
         stage.show();
+    }
+
+    private Tab createHistoryTab(ClientHistoryView historyView, model.Client client, TabPane tabPane) {
+        Tab historyTab = new Tab("History: " + client.getUsername());
+        historyTab.setClosable(true);
+        historyTab.setContent(historyView.getView(client, () -> {
+            tabPane.getTabs().remove(historyTab);
+            tabPane.getSelectionModel().selectFirst();
+        }));
+        return historyTab;
     }
 }
