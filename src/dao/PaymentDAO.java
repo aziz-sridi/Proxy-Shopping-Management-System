@@ -97,4 +97,27 @@ public class PaymentDAO {
         }
         return list;
     }
+
+    public List<Payment> findByClient(int clientId) throws SQLException {
+        List<Payment> list = new ArrayList<>();
+        String sql = "SELECT p.* FROM payments p INNER JOIN orders o ON p.order_id = o.order_id WHERE o.client_id = ? ORDER BY p.payment_date DESC";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, clientId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Payment p = new Payment();
+                    p.setPaymentId(rs.getInt("payment_id"));
+                    p.setOrderId(rs.getInt("order_id"));
+                    p.setAmount(rs.getDouble("amount"));
+                    Timestamp ts = rs.getTimestamp("payment_date");
+                    if (ts != null) p.setPaymentDate(ts.toLocalDateTime());
+                    p.setPaymentMethod(rs.getString("payment_method"));
+                    p.setComment(rs.getString("comment"));
+                    list.add(p);
+                }
+            }
+        }
+        return list;
+    }
 }

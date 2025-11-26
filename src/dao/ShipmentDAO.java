@@ -10,7 +10,7 @@ import java.util.List;
 public class ShipmentDAO {
 
     public void insert(Shipment s) throws SQLException {
-        String sql = "INSERT INTO shipments (batch_name, departure_country, arrival_country, shipment_cost, departure_date, arrival_date, status) VALUES (?,?,?,?,?,?,?)";
+        String sql = "INSERT INTO shipments (batch_name, departure_country, arrival_country, shipment_cost, departure_date, arrival_date, status, transportation_cost, other_costs) VALUES (?,?,?,?,?,?,?,?,?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, s.getBatchName());
@@ -20,6 +20,8 @@ public class ShipmentDAO {
             if (s.getDepartureDate() != null) ps.setDate(5, Date.valueOf(s.getDepartureDate())); else ps.setNull(5, Types.DATE);
             if (s.getArrivalDate() != null) ps.setDate(6, Date.valueOf(s.getArrivalDate())); else ps.setNull(6, Types.DATE);
             ps.setString(7, s.getStatus());
+            ps.setDouble(8, s.getTransportationCost());
+            ps.setDouble(9, s.getOtherCosts());
             ps.executeUpdate();
         }
     }
@@ -42,9 +44,38 @@ public class ShipmentDAO {
                 Date arr = rs.getDate("arrival_date");
                 if (arr != null) s.setArrivalDate(arr.toLocalDate());
                 s.setStatus(rs.getString("status"));
+                s.setTransportationCost(rs.getDouble("transportation_cost"));
+                s.setOtherCosts(rs.getDouble("other_costs"));
                 list.add(s);
             }
         }
         return list;
+    }
+
+    public void update(Shipment s) throws SQLException {
+        String sql = "UPDATE shipments SET batch_name=?, departure_country=?, arrival_country=?, shipment_cost=?, departure_date=?, arrival_date=?, status=?, transportation_cost=?, other_costs=? WHERE shipment_id=?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, s.getBatchName());
+            ps.setString(2, s.getDepartureCountry());
+            ps.setString(3, s.getArrivalCountry());
+            ps.setDouble(4, s.getShipmentCost());
+            if (s.getDepartureDate() != null) ps.setDate(5, Date.valueOf(s.getDepartureDate())); else ps.setNull(5, Types.DATE);
+            if (s.getArrivalDate() != null) ps.setDate(6, Date.valueOf(s.getArrivalDate())); else ps.setNull(6, Types.DATE);
+            ps.setString(7, s.getStatus());
+            ps.setDouble(8, s.getTransportationCost());
+            ps.setDouble(9, s.getOtherCosts());
+            ps.setInt(10, s.getShipmentId());
+            ps.executeUpdate();
+        }
+    }
+
+    public void delete(int shipmentId) throws SQLException {
+        String sql = "DELETE FROM shipments WHERE shipment_id=?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, shipmentId);
+            ps.executeUpdate();
+        }
     }
 }

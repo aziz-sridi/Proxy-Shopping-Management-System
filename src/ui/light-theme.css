@@ -1,0 +1,405 @@
+/*
+ * Modern Light Theme - 2025 Professional UI
+ * Elegant light color palette for modern SaaS applications
+ * ===================================================
+ */
+
+/* Light Theme Color Palette */
+.root {
+    /* Primary Colors */
+    --color-background: #F5F5F7;
+    --color-surface: #FFFFFF;
+    --color-surface-hover: #F8F9FA;
+    --color-surface-active: #F0F1F3;
+    
+    /* Text Colors */
+    --color-text-primary: #1A1A1A;
+    --color-text-secondary: #374151;
+    --color-text-tertiary: #6B7280;
+    --color-text-muted: #9CA3AF;
+    --color-text-inverse: #FFFFFF;
+    
+    /* Border Colors */
+    --color-border: #E0E0E0;
+    --color-border-light: #F1F3F4;
+    --color-border-focus: #4E54C8;
+    
+    /* Accent Colors */
+    --color-accent: #4E54C8;
+    --color-accent-hover: #3B42A8;
+    --color-accent-light: rgba(78,84,200,0.1);
+    
+    /* Status Colors */
+    --color-success: #10B981;
+    --color-success-light: rgba(16,185,129,0.1);
+    --color-warning: #F59E0B;
+    --color-warning-light: rgba(245,158,11,0.1);
+    --color-error: #EF4444;
+    --color-error-light: rgba(239,68,68,0.1);
+    
+    /* Shadow Colors */
+    --shadow-light: rgba(0,0,0,0.03);
+    --shadow-medium: rgba(0,0,0,0.08);
+    --shadow-heavy: rgba(0,0,0,0.18);
+    
+    /* Apply colors to root */
+    -fx-background-color: var(--color-background);
+    -fx-text-fill: var(--color-text-primary);
+}
+
+/* Override global styles with light theme colors */
+.button, .modern-button {
+    -fx-background-color: var(--color-accent);
+    -fx-text-fill: var(--color-text-inverse);
+    -fx-border-color: transparent;
+    -fx-effect: dropshadow(gaussian, var(--shadow-light), 3, 0.0, 0, 2);
+}
+
+.button:hover, .modern-button:hover {
+    -fx-background-color: var(--color-accent-hover);
+    -fx-effect: dropshadow(gaussian, var(--shadow-heavy), 8, 0.0, 0, 4);
+}
+
+.button-secondary, .modern-button-secondary {
+    -fx-background-color: transparent;
+    -fx-border-color: var(--color-border);
+    -fx-text-fill: var(--color-text-primary);
+}
+
+.button-secondary:hover, .modern-button-secondary:hover {
+    -fx-background-color: var(--color-surface-hover);
+}
+
+.button-success {
+    -fx-background-color: var(--color-success);
+    -fx-text-fill: var(--color-text-inverse);
+}
+
+.button-warning {
+    -fx-background-color: var(--color-warning);
+    -fx-text-fill: var(--color-text-inverse);
+}
+
+.button-error, .button-danger {
+    -fx-background-color: var(--color-error);
+    -fx-text-fill: var(--color-text-inverse);
+}
+
+.text-field, .modern-field {
+    -fx-background-color: var(--color-surface);
+    -fx-text-fill: var(--color-text-primary);
+    -fx-border-color: var(--color-border);
+    -fx-prompt-text-fill: var(--color-text-muted);
+    -fx-effect: dropshadow(gaussian, var(--shadow-light), 2, 0.0, 0, 1);
+}
+
+.text-field:focused, .modern-field:focused {
+    -fx-border-color: var(--color-border-focus);
+    -fx-effect: dropshadow(gaussian, rgba(78,84,200,0.2), 6, 0.0, 0, 0);
+}
+
+.combo-box, .modern-combo {
+    -fx-background-color: var(--color-surface);
+    -fx-border-color: var(--color-border);
+    -fx-text-fill: var(--color-text-primary);
+}
+
+.combo-box:focused, .modern-combo:focused {
+    -fx-border-color: var(--color-border-focus);
+    -fx-effect: dropshadow(gaussian, rgba(78,84,200,0.2), 6, 0.0, 0, 0);
+}
+
+.combo-box .list-cell {
+    -fx-background-color: var(--color-surface);
+    -fx-text-fill: var(--color-text-primary);
+}
+
+.combo-box .list-cell:hover {
+    -fx-background-color: var(--color-surface-hover);
+}
+
+.card, .modern-card {
+    -fx-background-color: var(--color-surface);
+    -fx-border-color: transparent;
+    -fx-effect: dropshadow(gaussian, var(--shadow-medium), 8, 0.0, 0, 4);
+}
+
+.card:hover, .modern-card:hover {
+    -fx-effect: dropshadow(gaussian, var(--shadow-heavy), 12, 0.0, 0, 6);
+}
+
+.table-view, .modern-table {
+    -fx-background-color: var(--color-surface);
+    -fx-border-color: var(--color-border);
+    -fx-effect: dropshadow(gaussian, var(--shadow-medium), 8, 0.0, 0, 4);
+}
+
+.table-view .column-header-background {
+    -fx-background-color: var(--color-surface-hover);
+    -fx-border-color: var(--color-border);
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-text-fill: var(--color-text-primary);
+}
+
+.table-view .column-header:hover {
+    -fx-background-color: var(--color-surface-active);
+}
+
+.table-row-cell {
+    -fx-background-color: var(--color-surface);
+    -fx-text-fill: var(--color-text-primary);
+    -fx-border-color: var(--color-border-light);
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #FAFBFC;
+}
+
+.table-row-cell:hover {
+    -fx-background-color: var(--color-surface-hover);
+}
+
+.table-row-cell:selected {
+    -fx-background-color: var(--color-accent-light);
+    -fx-text-fill: var(--color-accent);
+}
+
+.table-cell {
+    -fx-text-fill: inherit;
+}
+
+.tab-pane, .modern-tabs {
+    -fx-background-color: var(--color-background);
+}
+
+.tab-pane .tab-header-area {
+    -fx-background-color: var(--color-surface);
+    -fx-border-color: var(--color-border);
+}
+
+.tab {
+    -fx-background-color: transparent;
+    -fx-text-fill: var(--color-text-tertiary);
+}
+
+.tab:selected {
+    -fx-background-color: var(--color-surface);
+    -fx-text-fill: var(--color-accent);
+    -fx-border-color: var(--color-border);
+}
+
+.tab:hover {
+    -fx-background-color: var(--color-surface-hover);
+    -fx-text-fill: var(--color-text-secondary);
+}
+
+.label {
+    -fx-text-fill: var(--color-text-primary);
+}
+
+.label-title, .modern-title {
+    -fx-text-fill: var(--color-text-primary);
+}
+
+.label-subtitle, .modern-subtitle {
+    -fx-text-fill: var(--color-text-secondary);
+}
+
+.label-caption, .modern-caption {
+    -fx-text-fill: var(--color-text-tertiary);
+}
+
+.page-container {
+    -fx-background-color: var(--color-background);
+}
+
+/* Status Indicators */
+.status-success {
+    -fx-background-color: var(--color-success-light);
+    -fx-text-fill: var(--color-success);
+    -fx-background-radius: 8px;
+    -fx-padding: 4px 8px;
+}
+
+.status-warning {
+    -fx-background-color: var(--color-warning-light);
+    -fx-text-fill: var(--color-warning);
+    -fx-background-radius: 8px;
+    -fx-padding: 4px 8px;
+}
+
+.status-error, .status-danger {
+    -fx-background-color: var(--color-error-light);
+    -fx-text-fill: var(--color-error);
+    -fx-background-radius: 8px;
+    -fx-padding: 4px 8px;
+}
+
+/* Modern Sidebar */
+.sidebar {
+    -fx-background-color: var(--color-surface);
+    -fx-border-color: var(--color-border);
+    -fx-border-width: 0 1px 0 0;
+    -fx-effect: dropshadow(gaussian, var(--shadow-medium), 6, 0.0, 2, 0);
+}
+
+.sidebar-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: var(--color-text-secondary);
+    -fx-padding: 12px 20px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+}
+
+.sidebar-item:hover {
+    -fx-background-color: var(--color-surface-hover);
+    -fx-text-fill: var(--color-text-primary);
+}
+
+.sidebar-item:selected, .sidebar-item.selected {
+    -fx-background-color: var(--color-accent-light);
+    -fx-text-fill: var(--color-accent);
+}
+
+/* Modern Menu Bar */
+.menu-bar {
+    -fx-background-color: var(--color-surface);
+    -fx-border-color: var(--color-border);
+    -fx-border-width: 0 0 1px 0;
+}
+
+.menu {
+    -fx-background-color: transparent;
+    -fx-text-fill: var(--color-text-primary);
+}
+
+.menu:hover, .menu:focused {
+    -fx-background-color: var(--color-surface-hover);
+}
+
+/* Modern Dialog/Alert */
+.dialog-pane {
+    -fx-background-color: var(--color-surface);
+    -fx-border-color: var(--color-border);
+    -fx-border-radius: 18px;
+    -fx-background-radius: 18px;
+    -fx-effect: dropshadow(gaussian, var(--shadow-heavy), 16, 0.0, 0, 8);
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: transparent;
+    -fx-text-fill: var(--color-text-primary);
+}
+
+/* Modern Scroll Pane */
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar {
+    -fx-background-color: transparent;
+    -fx-pref-width: 8px;
+    -fx-pref-height: 8px;
+}
+
+.scroll-bar .track {
+    -fx-background-color: transparent;
+    -fx-background-radius: 4px;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: var(--color-text-muted);
+    -fx-background-radius: 4px;
+    -fx-opacity: 0.6;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-opacity: 0.8;
+    -fx-background-color: var(--color-text-tertiary);
+}
+
+/* Modern Progress Indicators */
+.progress-bar .track {
+    -fx-background-color: var(--color-surface-active);
+    -fx-background-radius: 8px;
+}
+
+.progress-bar .bar {
+    -fx-background-color: var(--color-accent);
+    -fx-background-radius: 8px;
+    -fx-padding: 4px;
+}
+
+.progress-indicator {
+    -fx-progress-color: var(--color-accent);
+}
+
+/* Form Styling */
+.form-container {
+    -fx-background-color: var(--color-surface);
+    -fx-background-radius: 18px;
+    -fx-border-radius: 18px;
+    -fx-padding: 24px;
+    -fx-spacing: 20px;
+    -fx-effect: dropshadow(gaussian, var(--shadow-medium), 8, 0.0, 0, 4);
+}
+
+.form-row {
+    -fx-spacing: 12px;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.form-label {
+    -fx-text-fill: var(--color-text-secondary);
+    -fx-font-weight: 500;
+    -fx-min-width: 120px;
+}
+
+/* Toolbar Styling */
+.tool-bar {
+    -fx-background-color: var(--color-surface);
+    -fx-border-color: var(--color-border);
+    -fx-border-width: 0 0 1px 0;
+    -fx-padding: 12px;
+    -fx-spacing: 12px;
+}
+
+/* Modern CheckBox and RadioButton */
+.check-box, .radio-button {
+    -fx-text-fill: var(--color-text-primary);
+    -fx-font-weight: 400;
+}
+
+.check-box:selected .box {
+    -fx-background-color: var(--color-accent);
+    -fx-border-color: var(--color-accent);
+}
+
+.radio-button:selected .radio {
+    -fx-background-color: var(--color-accent);
+    -fx-border-color: var(--color-accent);
+}
+
+/* Modern Separator */
+.separator {
+    -fx-background-color: var(--color-border);
+}
+
+/* Modern Tooltip */
+.tooltip {
+    -fx-background-color: var(--color-text-primary);
+    -fx-text-fill: var(--color-text-inverse);
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-font-size: 12px;
+    -fx-padding: 8px 12px;
+    -fx-effect: dropshadow(gaussian, var(--shadow-medium), 6, 0.0, 0, 2);
+}

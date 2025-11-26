@@ -16,6 +16,7 @@ public class Order {
     private String paymentStatus;
     private LocalDateTime orderDate;
     private String notes;
+    private Platform platform;
 
     public int getOrderId() { return orderId; }
     public void setOrderId(int orderId) { this.orderId = orderId; }
@@ -55,4 +56,7 @@ public class Order {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public Platform getPlatform() { return platform; }
+    public void setPlatform(Platform platform) { this.platform = platform; }
 }

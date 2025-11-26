@@ -9,18 +9,28 @@ public class MainView {
 
     public void start(Stage stage) {
         TabPane tabPane = new TabPane();
+        tabPane.getStyleClass().add("modern-tabs");
+
+        // Create OrdersView instance first so we can reference it
+        OrdersView ordersView = new OrdersView();
+
+        // Create ClientsView with both history opener and order refresh callback
+        ClientsView clientsView = new ClientsView(
+            client -> {
+                ClientHistoryView historyView = new ClientHistoryView();
+                tabPane.getTabs().add(createHistoryTab(historyView, client, tabPane));
+                tabPane.getSelectionModel().selectLast();
+            },
+            () -> ordersView.refreshData() // Refresh orders when new order is added
+        );
 
         Tab clientsTab = new Tab("Clients");
         clientsTab.setClosable(false);
-        clientsTab.setContent(new ClientsView(client -> {
-            ClientHistoryView historyView = new ClientHistoryView();
-            tabPane.getTabs().add(createHistoryTab(historyView, client, tabPane));
-            tabPane.getSelectionModel().selectLast();
-        }).getView());
+        clientsTab.setContent(clientsView.getView());
 
         Tab ordersTab = new Tab("Orders");
         ordersTab.setClosable(false);
-        ordersTab.setContent(new OrdersView().getView());
+        ordersTab.setContent(ordersView.getView());
 
         Tab shipmentsTab = new Tab("Shipments");
         shipmentsTab.setClosable(false);
@@ -34,12 +44,19 @@ public class MainView {
         dashboardTab.setClosable(false);
         dashboardTab.setContent(new DashboardView().getView());
 
-        tabPane.getTabs().addAll(clientsTab, ordersTab, shipmentsTab, paymentsTab, dashboardTab);
+        Tab settingsTab = new Tab("Settings");
+        settingsTab.setClosable(false);
+        settingsTab.setContent(new SettingsView().getView());
 
-        Scene scene = new Scene(tabPane, 1000, 700);
+        tabPane.getTabs().addAll(clientsTab, ordersTab, shipmentsTab, paymentsTab, dashboardTab, settingsTab);
+
+        Scene scene = new Scene(tabPane, 1200, 800);
+        scene.getStylesheets().add(getClass().getResource("app.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("light-theme.css").toExternalForm()); // Default to light theme
 
         stage.setTitle("Proxy Shopping Management System");
         stage.setScene(scene);
+        stage.setMaximized(true);
         stage.show();
     }
 

@@ -1,6 +1,7 @@
 package ui;
 
 import dao.OrderDAO;
+import dao.PaymentDAO;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -18,6 +19,7 @@ import java.sql.SQLException;
 public class ClientHistoryView {
 
     private final OrderDAO orderDAO = new OrderDAO();
+    private final PaymentDAO paymentDAO = new PaymentDAO();
 
     private final ObservableList<Order> orderData = FXCollections.observableArrayList();
     private final ObservableList<Payment> paymentData = FXCollections.observableArrayList();
@@ -67,7 +69,10 @@ public class ClientHistoryView {
         orderData.clear();
         paymentData.clear();
         try {
-            orderData.addAll(orderDAO.findAll());
+            // Load only orders for this specific client
+            orderData.addAll(orderDAO.findByClient(client.getClientId()));
+            // Load only payments for this specific client
+            paymentData.addAll(paymentDAO.findByClient(client.getClientId()));
         } catch (SQLException e) {
             // ignore for now
         }

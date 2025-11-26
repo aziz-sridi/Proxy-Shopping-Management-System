@@ -62,6 +62,8 @@ CREATE TABLE orders (
     original_price DECIMAL(10,2) NOT NULL,    -- product price in base currency
     selling_price DECIMAL(10,2) NOT NULL,     -- calculated using custom rate
     
+    platform VARCHAR(20) CHECK (platform IN ('Shein','Temu','AliExpress','Alibaba','Other')) DEFAULT 'Other',
+    
     payment_type VARCHAR(20) CHECK (payment_type IN ('Deposit','Full','On Delivery')) DEFAULT 'On Delivery',
     payment_status VARCHAR(20) CHECK (payment_status IN ('Unpaid','Partial','Paid')) DEFAULT 'Unpaid',
     

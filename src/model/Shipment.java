@@ -11,6 +11,8 @@ public class Shipment {
     private LocalDate departureDate;
     private LocalDate arrivalDate;
     private String status;
+    private double transportationCost;
+    private double otherCosts;
 
     public int getShipmentId() { return shipmentId; }
     public void setShipmentId(int shipmentId) { this.shipmentId = shipmentId; }
@@ -35,4 +37,20 @@ public class Shipment {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public double getTransportationCost() { return transportationCost; }
+    public void setTransportationCost(double transportationCost) { this.transportationCost = transportationCost; }
+
+    public double getOtherCosts() { return otherCosts; }
+    public void setOtherCosts(double otherCosts) { this.otherCosts = otherCosts; }
+
+    @Override
+    public String toString() {
+        return getDisplayText();
+    }
+
+    public String getDisplayText() {
+        String dateStr = arrivalDate != null ? arrivalDate.toString() : "TBD";
+        return batchName + " (Arrival: " + dateStr + ")";
+    }
 }

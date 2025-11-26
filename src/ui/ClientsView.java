@@ -19,6 +19,7 @@ public class ClientsView {
     private final OrderDAO orderDAO = new OrderDAO();
     private final ClientDialogs dialogs = new ClientDialogs(clientDAO, orderDAO);
     private HistoryOpener historyOpener;
+    private Runnable orderRefreshCallback;
 
     public ClientsView() {
     }
@@ -26,10 +27,16 @@ public class ClientsView {
     public ClientsView(HistoryOpener historyOpener) {
         this.historyOpener = historyOpener;
     }
+
+    public ClientsView(HistoryOpener historyOpener, Runnable orderRefreshCallback) {
+        this.historyOpener = historyOpener;
+        this.orderRefreshCallback = orderRefreshCallback;
+    }
     private final ObservableList<Client> clientData = FXCollections.observableArrayList();
 
     public BorderPane getView() {
         TableView<Client> table = new TableView<>();
+        table.getStyleClass().add("modern-table");
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
         TableColumn<Client, Number> colId = new TableColumn<>("ID");
@@ -44,6 +51,9 @@ public class ClientsView {
         TableColumn<Client, String> colSource = new TableColumn<>("Source");
         colSource.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getSource()));
 
+        TableColumn<Client, String> colAddress = new TableColumn<>("Address");
+        colAddress.setCellValueFactory(c -> new javafx.beans.property.SimpleStringProperty(c.getValue().getAddress()));
+
         TableColumn<Client, Void> colOrder = new TableColumn<>("New Order");
         colOrder.setCellFactory(col -> new TableCell<>() {
             private final Button btn = new Button("+");
@@ -51,7 +61,7 @@ public class ClientsView {
                 btn.getStyleClass().add("btn-primary");
                 btn.setOnAction(e -> {
                     Client client = getTableView().getItems().get(getIndex());
-                    dialogs.showAddOrderDialog(client, ClientsView.this::showError);
+                    dialogs.showAddOrderDialog(client, orderRefreshCallback, ClientsView.this::showError);
                 });
             }
 
@@ -74,6 +84,10 @@ public class ClientsView {
             private final HBox box = new HBox(5, btnEdit, btnDelete, btnHistory);
 
             {
+                btnEdit.getStyleClass().addAll("modern-button", "button-secondary");
+                btnDelete.getStyleClass().addAll("modern-button", "button-error");
+                btnHistory.getStyleClass().addAll("modern-button", "button-secondary");
+                
                 btnEdit.setOnAction(e -> {
                     Client client = getTableView().getItems().get(getIndex());
                     dialogs.showEditClientDialog(client, ClientsView.this::loadClients, ClientsView.this::showError);
@@ -106,15 +120,19 @@ public class ClientsView {
         table.getColumns().add(colUsername);
         table.getColumns().add(colPhone);
         table.getColumns().add(colSource);
+        table.getColumns().add(colAddress);
         table.getColumns().add(colOrder);
         table.getColumns().add(colActions);
         table.setItems(clientData);
 
         TextField txtSearch = new TextField();
+        txtSearch.getStyleClass().add("modern-field");
         txtSearch.setPromptText("Search clients by name or phone...");
         Button btnNewClient = new Button("+ New Client");
+        btnNewClient.getStyleClass().addAll("modern-button");
         btnNewClient.setOnAction(e -> dialogs.showAddClientDialog(this::loadClients, this::showError));
         HBox searchBar = new HBox(10, new Label("Search:"), txtSearch, btnNewClient);
+        searchBar.getStyleClass().add("modern-container");
         searchBar.setPadding(new Insets(10));
         HBox.setHgrow(txtSearch, Priority.ALWAYS);
 
@@ -133,6 +151,7 @@ public class ClientsView {
         });
 
         BorderPane root = new BorderPane();
+        root.getStyleClass().add("page-container");
         root.setTop(searchBar);
         root.setCenter(table);
 

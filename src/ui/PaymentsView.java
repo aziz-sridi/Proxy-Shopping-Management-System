@@ -22,7 +22,11 @@ public class PaymentsView {
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     public BorderPane getView() {
+        BorderPane view = new BorderPane();
+        view.getStyleClass().add("page-container");
+        
         TableView<Payment> paymentsTable = new TableView<>();
+        paymentsTable.getStyleClass().add("modern-table");
         paymentsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
         TableColumn<Payment, Number> colPayId = new TableColumn<>("ID");
@@ -53,6 +57,9 @@ public class PaymentsView {
             private final HBox box = new HBox(5, btnEdit, btnDelete);
 
             {
+                btnEdit.getStyleClass().addAll("modern-button", "button-secondary");
+                btnDelete.getStyleClass().addAll("modern-button", "button-error");
+                
                 btnEdit.setOnAction(e -> {
                     Payment p = getTableView().getItems().get(getIndex());
                     openEditPaymentDialog(p, () -> loadPayments(), PaymentsView.this::showError);
@@ -85,6 +92,7 @@ public class PaymentsView {
         paymentsTable.setItems(paymentData);
 
         TextField txtSearch = new TextField();
+        txtSearch.getStyleClass().add("modern-field");
         txtSearch.setPromptText("Search by method, comment or order ID...");
 
         txtSearch.textProperty().addListener((obs, old, cur) -> {
@@ -97,15 +105,15 @@ public class PaymentsView {
         });
 
         HBox searchBar = new HBox(10, new Label("Search:"), txtSearch);
+        searchBar.getStyleClass().add("action-buttons");
         searchBar.setPadding(new Insets(10));
         HBox.setHgrow(txtSearch, Priority.ALWAYS);
 
-        BorderPane root = new BorderPane();
-        root.setTop(searchBar);
-        root.setCenter(paymentsTable);
+        view.setTop(searchBar);
+        view.setCenter(paymentsTable);
 
         loadPayments();
-        return root;
+        return view;
     }
 
     private void loadPayments() {
