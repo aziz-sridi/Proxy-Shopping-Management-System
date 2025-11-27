@@ -1,7 +1,10 @@
-# Ignore everything
-.vscode/
-bin/
+# Ignore all files by default
+*
 
-# Except these
+# Do NOT ignore:
 !.gitignore
 !src/
+
+# Ignore these folders even if they are inside src
+.vscode/
+bin/
