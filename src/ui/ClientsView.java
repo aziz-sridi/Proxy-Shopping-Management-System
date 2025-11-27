@@ -116,7 +116,7 @@ public class ClientsView {
         });
 
         table.getColumns().clear();
-        table.getColumns().add(colId);
+        //table.getColumns().add(colId);
         table.getColumns().add(colUsername);
         table.getColumns().add(colPhone);
         table.getColumns().add(colSource);

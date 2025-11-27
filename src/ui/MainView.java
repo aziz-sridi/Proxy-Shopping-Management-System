@@ -9,8 +9,6 @@ public class MainView {
 
     public void start(Stage stage) {
         TabPane tabPane = new TabPane();
-        tabPane.getStyleClass().add("modern-tabs");
-
         // Create OrdersView instance first so we can reference it
         OrdersView ordersView = new OrdersView();
 
@@ -52,7 +50,7 @@ public class MainView {
 
         Scene scene = new Scene(tabPane, 1200, 800);
         scene.getStylesheets().add(getClass().getResource("app.css").toExternalForm());
-        scene.getStylesheets().add(getClass().getResource("light-theme.css").toExternalForm()); // Default to light theme
+        scene.getStylesheets().add(getClass().getResource("light-theme.css").toExternalForm());
 
         stage.setTitle("Proxy Shopping Management System");
         stage.setScene(scene);
