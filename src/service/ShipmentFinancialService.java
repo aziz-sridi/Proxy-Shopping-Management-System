@@ -9,12 +9,22 @@ import util.SettingsManager;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Service layer for Shipment financial calculations.
+ * @deprecated Use ShipmentService instead for financial calculations.
+ * This class is kept for backward compatibility.
+ */
+@Deprecated
 public class ShipmentFinancialService {
     
     private final OrderDAO orderDAO;
     
+    public ShipmentFinancialService(OrderDAO orderDAO) {
+        this.orderDAO = orderDAO;
+    }
+    
     public ShipmentFinancialService() {
-        this.orderDAO = new OrderDAO();
+        this(new OrderDAO());
     }
 
     /**

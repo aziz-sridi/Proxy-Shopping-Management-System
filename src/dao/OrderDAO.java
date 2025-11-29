@@ -97,6 +97,20 @@ public class OrderDAO {
         return list;
     }
 
+    public Order findById(int orderId) throws SQLException {
+        String sql = "SELECT * FROM orders WHERE order_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, orderId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapRow(rs);
+                }
+            }
+        }
+        return null;
+    }
+
     public void updatePaymentStatus(int orderId, String status) throws SQLException {
         String sql = "UPDATE orders SET payment_status = ? WHERE order_id = ?";
         try (Connection conn = DBConnection.getConnection();

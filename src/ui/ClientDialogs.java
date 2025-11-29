@@ -1,33 +1,36 @@
 package ui;
 
-import dao.ClientDAO;
-import dao.OrderDAO;
-import dao.ShipmentDAO;
+import service.ClientService;
+import service.OrderService;
+import service.ShipmentService;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
-import javafx.application.Platform;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import model.Client;
 import model.Order;
 import model.Shipment;
-import model.Settings;
-import util.SettingsManager;
+import ui.util.DialogUtils;
+import ui.util.PriceCalculator;
 
 import java.sql.SQLException;
 
+/**
+ * Dialog helper class for client-related dialogs.
+ * Refactored to use DialogUtils and PriceCalculator for reduced code duplication.
+ */
 public class ClientDialogs {
 
-    private final ClientDAO clientDAO;
-    private final OrderDAO orderDAO;
-    private final ShipmentDAO shipmentDAO;
+    private final ClientService clientService;
+    private final OrderService orderService;
+    private final ShipmentService shipmentService;
     private final ObservableList<Shipment> shipmentData = FXCollections.observableArrayList();
 
-    public ClientDialogs(ClientDAO clientDAO, OrderDAO orderDAO) {
-        this.clientDAO = clientDAO;
-        this.orderDAO = orderDAO;
-        this.shipmentDAO = new ShipmentDAO();
+    public ClientDialogs(ClientService clientService) {
+        this.clientService = clientService;
+        this.orderService = new OrderService();
+        this.shipmentService = new ShipmentService();
         loadShipments();
     }
 
@@ -41,10 +44,7 @@ public class ClientDialogs {
         cbSource.getItems().addAll("facebook", "instagram", "whatsapp");
         TextField txtAddress = new TextField();
 
-        GridPane grid = new GridPane();
-        grid.setHgap(8);
-        grid.setVgap(8);
-        grid.setPadding(new Insets(10));
+        GridPane grid = DialogUtils.createFormGrid(8, 8, 10);
         grid.add(new Label("Username:"), 0, 0);
         grid.add(txtUsername, 1, 0);
         grid.add(new Label("Phone:"), 0, 1);
@@ -65,7 +65,7 @@ public class ClientDialogs {
                 c.setSource(cbSource.getValue());
                 c.setAddress(txtAddress.getText());
                 try {
-                    clientDAO.insert(c);
+                    clientService.addClient(c);
                     if (onSuccess != null) onSuccess.run();
                 } catch (SQLException e) {
                     if (onError != null) onError.accept(e.getMessage());
@@ -86,10 +86,7 @@ public class ClientDialogs {
         TextField txtSource = new TextField(client.getSource());
         TextField txtAddress = new TextField(client.getAddress());
 
-        GridPane grid = new GridPane();
-        grid.setHgap(8);
-        grid.setVgap(8);
-        grid.setPadding(new Insets(10));
+        GridPane grid = DialogUtils.createFormGrid(8, 8, 10);
         grid.add(new Label("Username:"), 0, 0);
         grid.add(txtUsername, 1, 0);
         grid.add(new Label("Phone:"), 0, 1);
@@ -109,7 +106,7 @@ public class ClientDialogs {
                 client.setSource(txtSource.getText());
                 client.setAddress(txtAddress.getText());
                 try {
-                    clientDAO.update(client);
+                    clientService.updateClient(client);
                     if (onSuccess != null) onSuccess.run();
                 } catch (SQLException e) {
                     if (onError != null) onError.accept(e.getMessage());
@@ -129,6 +126,7 @@ public class ClientDialogs {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("New Order for " + client.getUsername());
 
+        // Form fields
         TextField txtProduct = new TextField();
         txtProduct.setPromptText("Product link");
 
@@ -140,20 +138,14 @@ public class ClientDialogs {
         TextField txtOriginal = new TextField();
         txtOriginal.setPromptText("Unit Price (EUR)");
 
-        TextField txtSelling = new TextField();
-        txtSelling.setPromptText("Selling price (TND)");
-        txtSelling.setEditable(false);
-        txtSelling.setStyle("-fx-background-color: #f0f0f0; -fx-font-weight: bold;");
+        TextField txtSelling = DialogUtils.createReadOnlyTextField("Selling price (TND)", 
+            "-fx-background-color: #f0f0f0; -fx-font-weight: bold;");
 
-        TextField txtExpectedTotal = new TextField();
-        txtExpectedTotal.setPromptText("Expected Total (TND)");
-        txtExpectedTotal.setEditable(false);
-        txtExpectedTotal.setStyle("-fx-background-color: #e8f5e8; -fx-font-weight: bold;");
+        TextField txtExpectedTotal = DialogUtils.createReadOnlyTextField("Expected Total (TND)",
+            "-fx-background-color: #e8f5e8; -fx-font-weight: bold;");
 
-        TextField txtDeposit = new TextField();
-        txtDeposit.setPromptText("Deposit (TND)");
-        txtDeposit.setEditable(false);
-        txtDeposit.setStyle("-fx-background-color: #fff3e0; -fx-font-weight: bold;");
+        TextField txtDeposit = DialogUtils.createReadOnlyTextField("Deposit (TND)",
+            "-fx-background-color: #fff3e0; -fx-font-weight: bold;");
 
         ComboBox<String> cbPaymentType = new ComboBox<>();
         cbPaymentType.getItems().addAll("Deposit", "Full", "On Delivery");
@@ -162,13 +154,15 @@ public class ClientDialogs {
         ComboBox<String> cbPlatform = new ComboBox<>();
         cbPlatform.getItems().addAll(model.Platform.getDisplayNames());
         cbPlatform.setValue("Other");
-        cbPlatform.setPromptText("Select Platform");
 
         ComboBox<Shipment> cbShipment = new ComboBox<>(shipmentData);
         cbShipment.setPromptText("Select Shipment (REQUIRED)");
         cbShipment.setStyle("-fx-border-color: red; -fx-border-width: 2px;");
 
-        // Automatic calculation logic
+        TextField txtNotes = new TextField();
+        txtNotes.setPromptText("Notes");
+
+        // Price calculation using PriceCalculator
         Runnable calculatePrices = () -> {
             String unitPriceText = txtOriginal.getText();
             
@@ -180,32 +174,21 @@ public class ClientDialogs {
             }
             
             try {
-                // Handle potential locale issues with decimal separator
-                String cleanPrice = unitPriceText.trim().replace(",", ".");
-                double unitPriceEUR = Double.parseDouble(cleanPrice);
+                double unitPriceEUR = PriceCalculator.parsePrice(unitPriceText);
                 int quantity = spQty.getValue();
                 
-                // Apply dynamic pricing rule: sellingPriceTND = unitPriceEUR * sellingMultiplier
-                Settings settings = SettingsManager.getCurrentSettings();
-                double sellingMultiplier = settings.getSellingMultiplier();
-                double sellingPriceTND = unitPriceEUR * sellingMultiplier;
+                double sellingPriceTND = PriceCalculator.calculateSellingPrice(unitPriceEUR);
+                double expectedTotalTND = PriceCalculator.calculateTotalSellingPrice(unitPriceEUR, quantity);
                 
-                // Calculate expected total: expectedTotalTND = sellingPriceTND * quantity
-                double expectedTotalTND = sellingPriceTND * quantity;
+                txtSelling.setText(PriceCalculator.formatPrice(sellingPriceTND));
+                txtExpectedTotal.setText(PriceCalculator.formatPrice(expectedTotalTND));
                 
-                // Update the selling price and expected total fields
-                txtSelling.setText(String.format("%.2f", sellingPriceTND));
-                txtExpectedTotal.setText(String.format("%.2f", expectedTotalTND));
-                
-                // Calculate deposit if payment type is "Deposit"
-                String paymentType = cbPaymentType.getValue();
-                if ("Deposit".equals(paymentType)) {
-                    double depositTND = expectedTotalTND * 0.5; // 50% deposit
-                    txtDeposit.setText(String.format("%.2f", depositTND));
+                if ("Deposit".equals(cbPaymentType.getValue())) {
+                    double depositTND = PriceCalculator.calculateDeposit(expectedTotalTND);
+                    txtDeposit.setText(PriceCalculator.formatPrice(depositTND));
                 } else {
                     txtDeposit.clear();
                 }
-                
             } catch (NumberFormatException ex) {
                 txtSelling.clear();
                 txtExpectedTotal.clear();
@@ -213,38 +196,20 @@ public class ClientDialogs {
             }
         };
 
-        // Add listeners to automatically recalculate when values change
-        txtOriginal.textProperty().addListener((obs, old, val) -> {
-            Platform.runLater(() -> calculatePrices.run());
-        });
-        spQty.valueProperty().addListener((obs, old, val) -> {
-            Platform.runLater(() -> calculatePrices.run());
-        });
-        cbPaymentType.valueProperty().addListener((obs, old, val) -> {
-            Platform.runLater(() -> calculatePrices.run());
-        });
-
-        // Also add focus listeners as backup
+        // Add listeners
+        txtOriginal.textProperty().addListener((obs, old, val) -> Platform.runLater(calculatePrices));
+        spQty.valueProperty().addListener((obs, old, val) -> Platform.runLater(calculatePrices));
+        cbPaymentType.valueProperty().addListener((obs, old, val) -> Platform.runLater(calculatePrices));
         txtOriginal.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
-            if (!isNowFocused) { // When field loses focus
-                Platform.runLater(() -> calculatePrices.run());
-            }
+            if (!isNowFocused) Platform.runLater(calculatePrices);
         });
-
-        // Add key release listener to catch immediate typing
-        txtOriginal.setOnKeyReleased(e -> Platform.runLater(() -> calculatePrices.run()));
-
-        TextField txtNotes = new TextField();
-        txtNotes.setPromptText("Notes");
+        txtOriginal.setOnKeyReleased(e -> Platform.runLater(calculatePrices));
 
         Button btnCalculate = new Button("Calculate Prices");
         btnCalculate.setOnAction(e -> calculatePrices.run());
         btnCalculate.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold;");
 
-        GridPane grid = new GridPane();
-        grid.setHgap(8);
-        grid.setVgap(8);
-        grid.setPadding(new Insets(10));
+        GridPane grid = DialogUtils.createFormGrid(8, 8, 10);
         grid.add(new Label("Product:"), 0, 0);
         grid.add(txtProduct, 1, 0);
         grid.add(new Label("Size:"), 0, 1);
@@ -253,7 +218,7 @@ public class ClientDialogs {
         grid.add(spQty, 1, 2);
         grid.add(new Label("Unit Price (EUR):"), 0, 3);
         grid.add(txtOriginal, 1, 3);
-        grid.add(btnCalculate, 2, 3); // Add calculate button next to price field
+        grid.add(btnCalculate, 2, 3);
         grid.add(new Label("Selling Price (TND):"), 0, 4);
         grid.add(txtSelling, 1, 4);
         grid.add(new Label("Expected Total (TND):"), 0, 5);
@@ -274,108 +239,59 @@ public class ClientDialogs {
 
         dialog.setResultConverter(btn -> {
             if (btn == ButtonType.OK) {
-                System.out.println("=== ORDER VALIDATION DEBUG ===");
-                
-                // Validate shipment selection first
-                Shipment shipment = cbShipment.getValue();
-                if (shipment == null) {
-                    if (onError != null) onError.accept("Please select a shipment. Orders must be assigned to a shipment.");
-                    return null;
-                }
-                
-                // Run calculation multiple times to be absolutely sure
-                try {
-                    calculatePrices.run();
-                    Thread.sleep(50); // Small delay to ensure calculation completes
-                    calculatePrices.run(); // Run again to be safe
-                } catch (Exception e) {
-                    System.out.println("Calculation error: " + e.getMessage());
-                }
-                
-                Order o = new Order();
-                o.setClientId(client.getClientId());
-                o.setShipmentId(shipment.getShipmentId());
-                o.setDeliveryOptionId(null);
-                o.setProductLink(txtProduct.getText());
-                o.setProductSize(txtSize.getText());
-                o.setQuantity(spQty.getValue());
-                
-                // Debug: Print all field values
-                System.out.println("Product: '" + txtProduct.getText() + "'");
-                System.out.println("Original Price: '" + txtOriginal.getText() + "'");
-                System.out.println("Selling Price: '" + txtSelling.getText() + "'");
-                
-                try {
-                    // Parse original price with extensive validation
-                    String originalText = txtOriginal.getText();
-                    System.out.println("Validating original price: '" + originalText + "'");
-                    
-                    if (originalText == null) {
-                        System.out.println("ERROR: Original price is null");
-                        if (onError != null) onError.accept("Unit Price field is empty. Please enter a price in EUR.");
-                        return null;
-                    }
-                    
-                    String trimmed = originalText.trim();
-                    if (trimmed.isEmpty()) {
-                        System.out.println("ERROR: Original price is empty after trim");
-                        if (onError != null) onError.accept("Unit Price field is empty. Please enter a price in EUR.");
-                        return null;
-                    }
-                    
-                    // Handle potential locale issues with decimal separator
-                    String cleanPrice = trimmed.replace(",", ".");
-                    System.out.println("Cleaned price: '" + cleanPrice + "'");
-                    
-                    double originalPrice = Double.parseDouble(cleanPrice);
-                    System.out.println("Parsed original price: " + originalPrice);
-                    o.setOriginalPrice(originalPrice);
-                    
-                    // Always calculate selling price using dynamic settings
-                    Settings settings = SettingsManager.getCurrentSettings();
-                    double sellingMultiplier = settings.getSellingMultiplier();
-                    double sellingPrice = originalPrice * sellingMultiplier;
-                    System.out.println("Calculated selling price: " + sellingPrice);
-                    o.setSellingPrice(sellingPrice);
-                    
-                    System.out.println("=== VALIDATION SUCCESSFUL ===");
-                    
-                } catch (NumberFormatException ex) {
-                    System.out.println("NumberFormatException: " + ex.getMessage());
-                    if (onError != null) onError.accept("Invalid number format. Please enter a valid price like 18.50 or 18,50");
-                    return null;
-                } catch (Exception ex) {
-                    System.out.println("Unexpected error: " + ex.getMessage());
-                    if (onError != null) onError.accept("Validation error: " + ex.getMessage());
-                    return null;
-                }
-                
-                o.setPaymentType(cbPaymentType.getValue());
-                o.setPaymentStatus("Unpaid");
-                o.setPlatform(model.Platform.fromString(cbPlatform.getValue()));
-                o.setNotes(txtNotes.getText());
-                try {
-                    orderDAO.insert(o);
-                    System.out.println("=== ORDER SAVED SUCCESSFULLY ===");
-                    if (onSuccess != null) onSuccess.run(); // Notify success
-                } catch (SQLException e) {
-                    System.out.println("Database error: " + e.getMessage());
-                    if (onError != null) onError.accept("Database error: " + e.getMessage());
-                }
+                processAddOrder(client, cbShipment.getValue(), txtProduct.getText(), txtSize.getText(),
+                    spQty.getValue(), txtOriginal.getText(), cbPaymentType.getValue(), 
+                    cbPlatform.getValue(), txtNotes.getText(), onSuccess, onError);
             }
             return null;
         });
 
-        // Trigger initial calculation when dialog opens
-        Platform.runLater(() -> calculatePrices.run());
-
+        Platform.runLater(calculatePrices);
         dialog.showAndWait();
+    }
+
+    private void processAddOrder(Client client, Shipment shipment, String product, String size,
+                                  int quantity, String originalPriceText, String paymentType,
+                                  String platform, String notes, Runnable onSuccess,
+                                  java.util.function.Consumer<String> onError) {
+        // Validate shipment selection
+        if (shipment == null) {
+            if (onError != null) onError.accept("Please select a shipment. Orders must be assigned to a shipment.");
+            return;
+        }
+
+        try {
+            double originalPrice = PriceCalculator.parsePrice(originalPriceText);
+            double sellingPrice = PriceCalculator.calculateSellingPrice(originalPrice);
+
+            Order o = new Order();
+            o.setClientId(client.getClientId());
+            o.setShipmentId(shipment.getShipmentId());
+            o.setDeliveryOptionId(null);
+            o.setProductLink(product);
+            o.setProductSize(size);
+            o.setQuantity(quantity);
+            o.setOriginalPrice(originalPrice);
+            o.setSellingPrice(sellingPrice);
+            o.setPaymentType(paymentType);
+            o.setPaymentStatus("Unpaid");
+            o.setPlatform(model.Platform.fromString(platform));
+            o.setNotes(notes);
+
+            orderService.insertOrder(o);
+            if (onSuccess != null) onSuccess.run();
+            
+        } catch (NumberFormatException ex) {
+            if (onError != null) onError.accept("Invalid number format. Please enter a valid price like 18.50 or 18,50");
+        } catch (SQLException e) {
+            if (onError != null) onError.accept("Database error: " + e.getMessage());
+        }
     }
 
     private void loadShipments() {
         shipmentData.clear();
         try {
-            shipmentData.addAll(shipmentDAO.findAll());
+            shipmentData.addAll(shipmentService.getAllShipments());
         } catch (SQLException e) {
             System.err.println("Error loading shipments: " + e.getMessage());
         }
