@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ui.viewController.ShipmentsViewController"
+            styleClass="page-container">
+
+    <top>
+        <VBox spacing="10" styleClass="action-buttons">
+            <padding>
+                <Insets topRightBottomLeft="15"/>
+            </padding>
+            <Label text="📦 Shipment Management" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+            <Button fx:id="btnAddShipment" text="➕ Add New Shipment" 
+                    styleClass="modern-button,button-primary"
+                    style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;"
+                    onAction="#handleAddShipment"/>
+        </VBox>
+    </top>
+
+    <center>
+        <TableView fx:id="shipmentsTable" styleClass="modern-table">
+            <columns>
+                <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+                <TableColumn fx:id="colShipmentName" text="Shipment Name" prefWidth="150"/>
+                <TableColumn fx:id="colTransportCost" text="Transport Cost" prefWidth="100"/>
+                <TableColumn fx:id="colOtherCosts" text="Other Costs" prefWidth="100"/>
+                <TableColumn fx:id="colStatus" text="Status" prefWidth="100"/>
+                <TableColumn fx:id="colActions" text="Actions" prefWidth="250"/>
+            </columns>
+        </TableView>
+    </center>
+</BorderPane>

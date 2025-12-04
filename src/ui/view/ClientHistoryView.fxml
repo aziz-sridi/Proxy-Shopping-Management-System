@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ui.viewController.ClientHistoryViewController">
+
+    <center>
+        <VBox spacing="10">
+            <padding>
+                <Insets topRightBottomLeft="16"/>
+            </padding>
+            
+            <!-- Header -->
+            <Label fx:id="lblHeader" text="Client History" styleClass="page-title"/>
+            
+            <!-- Orders Section -->
+            <Label text="Orders" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+            <TableView fx:id="ordersTable" prefHeight="200">
+                <columns>
+                    <TableColumn fx:id="colOrderId" text="Order #" prefWidth="80"/>
+                    <TableColumn fx:id="colProduct" text="Product" prefWidth="300"/>
+                    <TableColumn fx:id="colTotal" text="Selling (TND)" prefWidth="100"/>
+                </columns>
+            </TableView>
+            
+            <!-- Payments Section -->
+            <Label text="Payments" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+            <TableView fx:id="paymentsTable" prefHeight="200">
+                <columns>
+                    <TableColumn fx:id="colPayId" text="Payment #" prefWidth="80"/>
+                    <TableColumn fx:id="colAmount" text="Amount (TND)" prefWidth="100"/>
+                    <TableColumn fx:id="colMethod" text="Method" prefWidth="100"/>
+                </columns>
+            </TableView>
+        </VBox>
+    </center>
+</BorderPane>

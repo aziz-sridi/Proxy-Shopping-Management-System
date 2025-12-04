@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ui.viewController.OrdersViewController"
+            styleClass="page-container">
+
+    <top>
+        <HBox spacing="5" styleClass="action-buttons">
+            <padding>
+                <Insets topRightBottomLeft="10"/>
+            </padding>
+            <Label text="Search:"/>
+            <TextField fx:id="txtClientSearch" promptText="Search by client username or product..." HBox.hgrow="ALWAYS"/>
+            <Label text="Status:"/>
+            <ComboBox fx:id="cbStatusFilter" promptText="All"/>
+            <Label text="Platform:"/>
+            <ComboBox fx:id="cbPlatformFilter" promptText="All Platforms"/>
+            <Button fx:id="btnNewOrder" text="New Order" styleClass="modern-button,button-primary" onAction="#handleNewOrder"/>
+        </HBox>
+    </top>
+
+    <center>
+        <TableView fx:id="ordersTable" styleClass="modern-table">
+            <columns>
+                <TableColumn fx:id="colId" text="ID" prefWidth="50"/>
+                <TableColumn fx:id="colClient" text="Client" prefWidth="100"/>
+                <TableColumn fx:id="colProduct" text="Product Link" prefWidth="200"/>
+                <TableColumn fx:id="colPlatform" text="Platform" prefWidth="80"/>
+                <TableColumn fx:id="colShipment" text="Shipment" prefWidth="100"/>
+                <TableColumn fx:id="colOriginal" text="Original" prefWidth="80"/>
+                <TableColumn fx:id="colSelling" text="Selling" prefWidth="80"/>
+                <TableColumn fx:id="colRemaining" text="Remaining" prefWidth="80"/>
+                <TableColumn fx:id="colStatus" text="Payment" prefWidth="80"/>
+                <TableColumn fx:id="colActions" text="Actions" prefWidth="100"/>
+            </columns>
+        </TableView>
+    </center>
+</BorderPane>

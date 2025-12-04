@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.geometry.Pos?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ui.viewController.SettingsViewController">
+    <padding>
+        <Insets topRightBottomLeft="20"/>
+    </padding>
+
+    <center>
+        <VBox spacing="20">
+            <!-- Title -->
+            <Label text="Application Settings" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+
+            <!-- Current Settings Display -->
+            <VBox spacing="10" style="-fx-background-color: #ecf0f1; -fx-padding: 15; -fx-background-radius: 5;">
+                <Label text="Current Settings" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                <Label fx:id="lblCurrentConversionRate"/>
+                <Label fx:id="lblCurrentSellingMultiplier"/>
+            </VBox>
+
+            <!-- Settings Form -->
+            <VBox spacing="15" style="-fx-background-color: #ffffff; -fx-padding: 20; -fx-background-radius: 5; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-border-width: 1;">
+                <Label text="Update Settings" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #34495e;"/>
+
+                <GridPane hgap="15" vgap="15" alignment="CENTER_LEFT">
+                    <!-- Conversion Rate -->
+                    <Label text="Conversion Rate:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                    <TextField fx:id="txtConversionRate" promptText="e.g., 3.5" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                    <Label text="(Currently not used in calculations, reserved for future use)" 
+                           style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;" 
+                           GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+
+                    <!-- Selling Multiplier -->
+                    <Label text="Selling Multiplier:" style="-fx-font-weight: bold;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                    <TextField fx:id="txtSellingMultiplier" promptText="e.g., 5.0" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                    <Label text="(Used to calculate: Selling Price TND = EUR Price × This Value)" 
+                           style="-fx-font-size: 11px; -fx-text-fill: #7f8c8d;" 
+                           GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                </GridPane>
+
+                <!-- Buttons -->
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Button fx:id="btnSave" text="Save Settings" 
+                            style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20; -fx-background-radius: 5;"
+                            onAction="#handleSave"/>
+                    <Button fx:id="btnReset" text="Reset to Defaults"
+                            style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20; -fx-background-radius: 5;"
+                            onAction="#handleReset"/>
+                    <Button fx:id="btnReload" text="Reload Current"
+                            style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20; -fx-background-radius: 5;"
+                            onAction="#handleReload"/>
+                </HBox>
+            </VBox>
+
+            <!-- Calculation Example -->
+            <VBox spacing="10" style="-fx-background-color: #e8f4fd; -fx-padding: 15; -fx-background-radius: 5; -fx-border-color: #3498db; -fx-border-radius: 5; -fx-border-width: 1;">
+                <Label text="Calculation Example" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2980b9;"/>
+                <Label fx:id="lblCalculationExample" style="-fx-font-family: monospace; -fx-font-size: 12px;"/>
+            </VBox>
+        </VBox>
+    </center>
+</BorderPane>
