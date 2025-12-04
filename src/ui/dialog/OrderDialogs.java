@@ -13,7 +13,7 @@ import java.sql.SQLException;
 
 /**
  * Dialog helper class for order-related dialogs.
- * Extracts dialog logic from OrdersViewController to reduce file size and improve maintainability.
+ * Extracts dialog logic from OrdersViewController to reduce file size and improve maintainability..
  */
 public class OrderDialogs {
 
