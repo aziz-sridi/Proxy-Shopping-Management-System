@@ -16,9 +16,9 @@ import java.util.logging.Logger;
  * Service layer for Shipment-related business logic.
  * Handles validation, financial calculations, logging, and delegates CRUD operations to ShipmentDAO.
  */
-public class ShipmentService {
+public class ShipmentServiceImpl implements IShipmentService {
 
-    private static final Logger LOGGER = Logger.getLogger(ShipmentService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ShipmentServiceImpl.class.getName());
     private final ShipmentDAO shipmentDAO;
     private final OrderDAO orderDAO;
 
@@ -27,7 +27,7 @@ public class ShipmentService {
      * @param shipmentDAO the DAO to use for shipment database operations
      * @param orderDAO the DAO to use for order database operations
      */
-    public ShipmentService(ShipmentDAO shipmentDAO, OrderDAO orderDAO) {
+    public ShipmentServiceImpl(ShipmentDAO shipmentDAO, OrderDAO orderDAO) {
         this.shipmentDAO = shipmentDAO;
         this.orderDAO = orderDAO;
     }
@@ -35,7 +35,7 @@ public class ShipmentService {
     /**
      * Default constructor using default DAOs.
      */
-    public ShipmentService() {
+    public ShipmentServiceImpl() {
         this(new ShipmentDAO(), new OrderDAO());
     }
 
@@ -44,6 +44,7 @@ public class ShipmentService {
      * @return list of all shipments
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<Shipment> getAllShipments() throws SQLException {
         LOGGER.log(Level.INFO, "Fetching all shipments");
         return shipmentDAO.findAll();
@@ -55,6 +56,7 @@ public class ShipmentService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if validation fails
      */
+    @Override
     public void addShipment(Shipment shipment) throws SQLException {
         validateShipment(shipment);
         LOGGER.log(Level.INFO, "Adding new shipment: {0}", shipment.getBatchName());
@@ -68,6 +70,7 @@ public class ShipmentService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if validation fails
      */
+    @Override
     public void updateShipment(Shipment shipment) throws SQLException {
         validateShipment(shipment);
         if (shipment.getShipmentId() <= 0) {
@@ -84,10 +87,9 @@ public class ShipmentService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if shipment ID is invalid
      */
+    @Override
     public void deleteShipment(int shipmentId) throws SQLException {
-        if (shipmentId <= 0) {
-            throw new IllegalArgumentException("Shipment ID must be positive");
-        }
+        ValidationUtils.validatePositiveId(shipmentId, "Shipment ID");
         LOGGER.log(Level.INFO, "Deleting shipment ID: {0}", shipmentId);
         shipmentDAO.delete(shipmentId);
         LOGGER.log(Level.INFO, "Shipment deleted successfully: {0}", shipmentId);
@@ -99,6 +101,7 @@ public class ShipmentService {
      * @return list of orders in the shipment
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<Order> getOrdersForShipment(int shipmentId) throws SQLException {
         return orderDAO.getOrdersByShipmentId(shipmentId);
     }
@@ -109,6 +112,7 @@ public class ShipmentService {
      * @return total number of orders
      * @throws SQLException if database error occurs
      */
+    @Override
     public int calculateTotalOrders(Shipment shipment) throws SQLException {
         List<Order> orders = orderDAO.getOrdersByShipmentId(shipment.getShipmentId());
         return orders.size();
@@ -121,6 +125,7 @@ public class ShipmentService {
      * @return total cost of goods
      * @throws SQLException if database error occurs
      */
+    @Override
     public double calculateTotalCostOfGoods(Shipment shipment) throws SQLException {
         List<Order> orders = orderDAO.getOrdersByShipmentId(shipment.getShipmentId());
         Settings settings = SettingsManager.getCurrentSettings();
@@ -136,20 +141,19 @@ public class ShipmentService {
 
     /**
      * Calculate total revenue for all orders in a shipment.
-     * Formula: orderRevenue = sellingPriceTND * quantity
+     * Uses PriceCalculator to avoid duplication.
      * @param shipment the shipment
      * @return total revenue
      * @throws SQLException if database error occurs
      */
+    @Override
     public double calculateTotalRevenue(Shipment shipment) throws SQLException {
         List<Order> orders = orderDAO.getOrdersByShipmentId(shipment.getShipmentId());
-        Settings settings = SettingsManager.getCurrentSettings();
-        double sellingMultiplier = settings.getSellingMultiplier();
         
         double totalRevenue = 0.0;
         for (Order order : orders) {
-            double sellingPriceTND = order.getOriginalPrice() * sellingMultiplier;
-            double orderRevenue = sellingPriceTND * order.getQuantity();
+            double orderRevenue = ui.util.PriceCalculator.calculateTotalSellingPrice(
+                order.getOriginalPrice(), order.getQuantity());
             totalRevenue += orderRevenue;
         }
         return totalRevenue;
@@ -162,6 +166,7 @@ public class ShipmentService {
      * @return total expenses
      * @throws SQLException if database error occurs
      */
+    @Override
     public double calculateTotalExpenses(Shipment shipment) throws SQLException {
         double totalCostOfGoods = calculateTotalCostOfGoods(shipment);
         return totalCostOfGoods + shipment.getTransportationCost() + shipment.getOtherCosts();
@@ -174,6 +179,7 @@ public class ShipmentService {
      * @return net profit
      * @throws SQLException if database error occurs
      */
+    @Override
     public double calculateNetProfit(Shipment shipment) throws SQLException {
         double totalRevenue = calculateTotalRevenue(shipment);
         double totalExpenses = calculateTotalExpenses(shipment);
@@ -186,6 +192,7 @@ public class ShipmentService {
      * @return financial summary
      * @throws SQLException if database error occurs
      */
+    @Override
     public ShipmentFinancialSummary getFinancialSummary(Shipment shipment) throws SQLException {
         ShipmentFinancialSummary summary = new ShipmentFinancialSummary();
         summary.setShipment(shipment);
@@ -201,25 +208,16 @@ public class ShipmentService {
 
     /**
      * Validate shipment data before database operations.
+     * Uses ValidationUtils to avoid code duplication.
      * @param shipment the shipment to validate
      * @throws IllegalArgumentException if validation fails
      */
     private void validateShipment(Shipment shipment) {
-        if (shipment == null) {
-            throw new IllegalArgumentException("Shipment cannot be null");
-        }
-        if (shipment.getBatchName() == null || shipment.getBatchName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Batch name is required");
-        }
-        if (shipment.getShipmentCost() < 0) {
-            throw new IllegalArgumentException("Shipment cost cannot be negative");
-        }
-        if (shipment.getTransportationCost() < 0) {
-            throw new IllegalArgumentException("Transportation cost cannot be negative");
-        }
-        if (shipment.getOtherCosts() < 0) {
-            throw new IllegalArgumentException("Other costs cannot be negative");
-        }
+        ValidationUtils.validateNotNull(shipment, "Shipment");
+        ValidationUtils.validateNotEmpty(shipment.getBatchName(), "Batch name");
+        ValidationUtils.validateNonNegative(shipment.getShipmentCost(), "Shipment cost");
+        ValidationUtils.validateNonNegative(shipment.getTransportationCost(), "Transportation cost");
+        ValidationUtils.validateNonNegative(shipment.getOtherCosts(), "Other costs");
     }
 
     /**

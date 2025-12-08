@@ -1,8 +1,10 @@
 package ui;
 
-import service.ClientService;
-import service.OrderService;
-import service.ShipmentService;
+import service.IClientService;
+import service.IOrderService;
+import service.OrderServiceImpl;
+import service.IShipmentService;
+import service.ShipmentServiceImpl;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -22,15 +24,15 @@ import java.sql.SQLException;
  */
 public class ClientDialogs {
 
-    private final ClientService clientService;
-    private final OrderService orderService;
-    private final ShipmentService shipmentService;
+    private final IClientService clientService;
+    private final IOrderService orderService;
+    private final IShipmentService shipmentService;
     private final ObservableList<Shipment> shipmentData = FXCollections.observableArrayList();
 
-    public ClientDialogs(ClientService clientService) {
+    public ClientDialogs(IClientService clientService) {
         this.clientService = clientService;
-        this.orderService = new OrderService();
-        this.shipmentService = new ShipmentService();
+        this.orderService = new OrderServiceImpl();
+        this.shipmentService = new ShipmentServiceImpl();
         loadShipments();
     }
 
@@ -123,6 +125,9 @@ public class ClientDialogs {
     }
 
     public void showAddOrderDialog(Client client, Runnable onSuccess, java.util.function.Consumer<String> onError) {
+        // Reload shipments every time the dialog is opened to ensure fresh data
+        loadShipments();
+        
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("New Order for " + client.getUsername());
 

@@ -12,23 +12,23 @@ import java.util.logging.Logger;
  * Service layer for Client-related business logic.
  * Handles validation, logging, and delegates CRUD operations to ClientDAO.
  */
-public class ClientService {
+public class ClientServiceImpl implements IClientService {
 
-    private static final Logger LOGGER = Logger.getLogger(ClientService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ClientServiceImpl.class.getName());
     private final ClientDAO clientDAO;
 
     /**
      * Constructor with dependency injection for ClientDAO.
      * @param clientDAO the DAO to use for database operations
      */
-    public ClientService(ClientDAO clientDAO) {
+    public ClientServiceImpl(ClientDAO clientDAO) {
         this.clientDAO = clientDAO;
     }
 
     /**
      * Default constructor using default ClientDAO.
      */
-    public ClientService() {
+    public ClientServiceImpl() {
         this(new ClientDAO());
     }
 
@@ -37,6 +37,7 @@ public class ClientService {
      * @return list of all clients
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<Client> getAllClients() throws SQLException {
         LOGGER.log(Level.INFO, "Fetching all clients");
         return clientDAO.findAll();
@@ -48,6 +49,7 @@ public class ClientService {
      * @return list of matching clients
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<Client> searchClients(String keyword) throws SQLException {
         if (keyword == null || keyword.trim().isEmpty()) {
             LOGGER.log(Level.INFO, "Empty search keyword, returning all clients");
@@ -63,6 +65,7 @@ public class ClientService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if validation fails
      */
+    @Override
     public void addClient(Client client) throws SQLException {
         validateClient(client);
         LOGGER.log(Level.INFO, "Adding new client: {0}", client.getUsername());
@@ -76,6 +79,7 @@ public class ClientService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if validation fails
      */
+    @Override
     public void updateClient(Client client) throws SQLException {
         validateClient(client);
         if (client.getClientId() <= 0) {
@@ -92,10 +96,9 @@ public class ClientService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if client ID is invalid
      */
+    @Override
     public void deleteClient(int clientId) throws SQLException {
-        if (clientId <= 0) {
-            throw new IllegalArgumentException("Client ID must be positive");
-        }
+        ValidationUtils.validatePositiveId(clientId, "Client ID");
         LOGGER.log(Level.INFO, "Deleting client ID: {0}", clientId);
         clientDAO.delete(clientId);
         LOGGER.log(Level.INFO, "Client deleted successfully: {0}", clientId);
@@ -103,22 +106,17 @@ public class ClientService {
 
     /**
      * Validate client data before database operations.
+     * Uses ValidationUtils to avoid code duplication.
      * @param client the client to validate
      * @throws IllegalArgumentException if validation fails
      */
     private void validateClient(Client client) {
-        if (client == null) {
-            throw new IllegalArgumentException("Client cannot be null");
-        }
-        if (client.getUsername() == null || client.getUsername().trim().isEmpty()) {
-            throw new IllegalArgumentException("Username is required");
-        }
-        if (client.getUsername().length() > 100) {
-            throw new IllegalArgumentException("Username cannot exceed 100 characters");
-        }
+        ValidationUtils.validateNotNull(client, "Client");
+        ValidationUtils.validateNotEmpty(client.getUsername(), "Username");
+        ValidationUtils.validateMaxLength(client.getUsername(), 100, "Username");
         // Phone validation - optional but if provided should be valid
-        if (client.getPhone() != null && client.getPhone().length() != 8) {
-            throw new IllegalArgumentException("Phone number must be exactly 8 characters");
+        if (client.getPhone() != null && !client.getPhone().isEmpty()) {
+            ValidationUtils.validateExactLength(client.getPhone(), 8, "Phone number");
         }
     }
 }

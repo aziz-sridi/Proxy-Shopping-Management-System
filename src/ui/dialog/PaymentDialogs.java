@@ -1,7 +1,7 @@
 package ui.dialog;
 
-import service.OrderService;
-import service.PaymentService;
+import service.IOrderService;
+import service.IPaymentService;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import model.Order;
@@ -17,10 +17,10 @@ import java.sql.SQLException;
  */
 public class PaymentDialogs {
 
-    private final PaymentService paymentService;
-    private final OrderService orderService;
+    private final IPaymentService paymentService;
+    private final IOrderService orderService;
 
-    public PaymentDialogs(PaymentService paymentService, OrderService orderService) {
+    public PaymentDialogs(IPaymentService paymentService, IOrderService orderService) {
         this.paymentService = paymentService;
         this.orderService = orderService;
     }
@@ -213,6 +213,15 @@ public class PaymentDialogs {
         if (DialogUtils.showConfirmation("Delete selected payment?")) {
             try {
                 paymentService.deletePayment(payment.getPaymentId(), payment.getOrderId());
+                
+                // Recalculate and update payment status for the order
+                Order order = orderService.getOrderById(payment.getOrderId());
+                if (order != null) {
+                    double totalPaid = paymentService.getTotalPaidForOrder(payment.getOrderId());
+                    String newStatus = PriceCalculator.determinePaymentStatus(order.getSellingPrice(), totalPaid);
+                    orderService.updatePaymentStatus(payment.getOrderId(), newStatus);
+                }
+                
                 if (onSuccess != null) onSuccess.onComplete();
                 if (onOrderUpdate != null) onOrderUpdate.onComplete();
             } catch (SQLException ex) {
@@ -228,6 +237,46 @@ public class PaymentDialogs {
         cbMethod.getItems().addAll("cash", "card", "post");
         cbMethod.setValue("cash");
         return cbMethod;
+    }
+
+    private double validatePaymentAmount(String amountText, double maxAmount) {
+        try {
+            double amount = PriceCalculator.parsePrice(amountText);
+            if (amount <= 0) {
+                DialogUtils.showError("Amount must be positive");
+                return -1;
+            }
+            if (amount > maxAmount) {
+                DialogUtils.showError(String.format("Amount cannot exceed remaining amount (%s TND)", 
+                    PriceCalculator.formatPrice(maxAmount)));
+                return -1;
+            }
+            return amount;
+        } catch (NumberFormatException e) {
+            DialogUtils.showError("Invalid amount format");
+            return -1;
+        }
+    }
+
+    private Payment createPayment(int orderId, double amount, String method, String comment) {
+        Payment payment = new Payment();
+        payment.setOrderId(orderId);
+        payment.setAmount(amount);
+        payment.setPaymentMethod(method);
+        payment.setComment(comment);
+        return payment;
+    }
+
+    private void updateOrderPaymentStatus(int orderId, double sellingPrice) throws SQLException {
+        double totalPaid = paymentService.getTotalPaidForOrder(orderId);
+        String newStatus = PriceCalculator.determinePaymentStatus(sellingPrice, totalPaid);
+        orderService.updatePaymentStatus(orderId, newStatus);
+    }
+
+    private void executeCallbacks(PaymentCallback... callbacks) {
+        for (PaymentCallback callback : callbacks) {
+            if (callback != null) callback.onComplete();
+        }
     }
 
     private void updateRemainingLabel(String orderIdText, Label lblRemaining) {
@@ -263,33 +312,16 @@ public class PaymentDialogs {
                                     String method, String comment, double maxAmount,
                                     PaymentCallback onSuccess, PaymentCallback onOrderUpdate) {
         try {
-            double amount = PriceCalculator.parsePrice(amountText);
+            double amount = validatePaymentAmount(amountText, maxAmount);
+            if (amount < 0) return; // Validation failed
             
-            if (amount <= 0) {
-                DialogUtils.showError("Amount must be positive");
-                return;
-            }
-            
-            if (amount > maxAmount) {
-                DialogUtils.showError(String.format("Amount cannot exceed remaining amount (%s TND)", 
-                    PriceCalculator.formatPrice(maxAmount)));
-                return;
-            }
-            
-            Payment payment = new Payment();
-            payment.setOrderId(orderId);
-            payment.setAmount(amount);
-            payment.setPaymentMethod(method);
-            payment.setComment(comment);
+            Payment payment = createPayment(orderId, amount, method, comment);
             paymentService.addPayment(payment);
 
             // Update payment status
-            double totalPaid = paymentService.getTotalPaidForOrder(orderId);
-            String newStatus = PriceCalculator.determinePaymentStatus(sellingPrice, totalPaid);
-            orderService.updatePaymentStatus(orderId, newStatus);
+            updateOrderPaymentStatus(orderId, sellingPrice);
 
-            if (onSuccess != null) onSuccess.onComplete();
-            if (onOrderUpdate != null) onOrderUpdate.onComplete();
+            executeCallbacks(onSuccess, onOrderUpdate);
             
         } catch (NumberFormatException ex) {
             DialogUtils.showError("Invalid amount.");
@@ -303,18 +335,11 @@ public class PaymentDialogs {
                                                PaymentCallback onSuccess, PaymentCallback onOrderUpdate) {
         try {
             int orderId = Integer.parseInt(orderIdText.trim());
-            double amount = PriceCalculator.parsePrice(amountText);
-            
             if (orderId <= 0) {
                 DialogUtils.showError("Order ID must be positive");
                 return;
             }
-            if (amount <= 0) {
-                DialogUtils.showError("Amount must be positive");
-                return;
-            }
             
-            // Validate against remaining amount
             Order order = orderService.getOrderById(orderId);
             if (order == null) {
                 DialogUtils.showError("Order not found");
@@ -329,21 +354,12 @@ public class PaymentDialogs {
                 return;
             }
             
-            if (amount > remaining) {
-                DialogUtils.showError(String.format("Amount cannot exceed remaining amount (%s TND)", 
-                    PriceCalculator.formatPrice(remaining)));
-                return;
-            }
+            double amount = validatePaymentAmount(amountText, remaining);
+            if (amount < 0) return; // Validation failed
             
-            Payment payment = new Payment();
-            payment.setOrderId(orderId);
-            payment.setAmount(amount);
-            payment.setPaymentMethod(method);
-            payment.setComment(comment);
-            
+            Payment payment = createPayment(orderId, amount, method, comment);
             paymentService.addPayment(payment);
-            if (onSuccess != null) onSuccess.onComplete();
-            if (onOrderUpdate != null) onOrderUpdate.onComplete();
+            executeCallbacks(onSuccess, onOrderUpdate);
             
         } catch (NumberFormatException ex) {
             DialogUtils.showError("Invalid number format. Please enter valid Order ID and Amount.");
@@ -356,22 +372,21 @@ public class PaymentDialogs {
                                      String comment, double maxAmount,
                                      PaymentCallback onSuccess, PaymentCallback onOrderUpdate) {
         try {
-            double amount = PriceCalculator.parsePrice(amountText);
-            if (amount <= 0) {
-                DialogUtils.showError("Amount must be positive");
-                return;
-            }
-            if (amount > maxAmount) {
-                DialogUtils.showError(String.format("Amount cannot exceed remaining amount (%s TND)", 
-                    PriceCalculator.formatPrice(maxAmount)));
-                return;
-            }
+            double amount = validatePaymentAmount(amountText, maxAmount);
+            if (amount < 0) return; // Validation failed
+            
             payment.setAmount(amount);
             payment.setPaymentMethod(method);
             payment.setComment(comment);
             paymentService.updatePayment(payment);
-            if (onSuccess != null) onSuccess.onComplete();
-            if (onOrderUpdate != null) onOrderUpdate.onComplete();
+            
+            // Recalculate and update payment status for the order
+            Order order = orderService.getOrderById(payment.getOrderId());
+            if (order != null) {
+                updateOrderPaymentStatus(payment.getOrderId(), order.getSellingPrice());
+            }
+            
+            executeCallbacks(onSuccess, onOrderUpdate);
         } catch (NumberFormatException ex) {
             DialogUtils.showError("Invalid amount format");
         } catch (Exception ex) {

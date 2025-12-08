@@ -1,7 +1,9 @@
-package ui.viewController;
+package Controller;
 
-import service.OrderService;
-import service.PaymentService;
+import service.IOrderService;
+import service.OrderServiceImpl;
+import service.IPaymentService;
+import service.PaymentServiceImpl;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -21,11 +23,11 @@ import java.util.ResourceBundle;
 /**
  * ViewController for ClientHistoryView - displays order and payment history for a client
  */
-public class ClientHistoryViewController implements Initializable {
+public class ClientHistoryController implements Initializable {
 
     // Services
-    private final OrderService orderService = new OrderService();
-    private final PaymentService paymentService = new PaymentService();
+    private final IOrderService orderService = new OrderServiceImpl();
+    private final IPaymentService paymentService = new PaymentServiceImpl();
 
     // Observable data
     private final ObservableList<Order> orderData = FXCollections.observableArrayList();

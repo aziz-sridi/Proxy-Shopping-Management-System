@@ -1,7 +1,6 @@
 package service;
 
 import dao.PaymentDAO;
-import dao.OrderDAO;
 import model.Payment;
 
 import java.sql.SQLException;
@@ -13,27 +12,24 @@ import java.util.logging.Logger;
  * Service layer for Payment-related business logic.
  * Handles validation, logging, and delegates CRUD operations to PaymentDAO.
  */
-public class PaymentService {
+public class PaymentServiceImpl implements IPaymentService {
 
-    private static final Logger LOGGER = Logger.getLogger(PaymentService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(PaymentServiceImpl.class.getName());
     private final PaymentDAO paymentDAO;
-    private final OrderDAO orderDAO;
 
     /**
-     * Constructor with dependency injection for DAOs.
+     * Constructor with dependency injection for PaymentDAO.
      * @param paymentDAO the DAO to use for payment database operations
-     * @param orderDAO the DAO to use for order database operations
      */
-    public PaymentService(PaymentDAO paymentDAO, OrderDAO orderDAO) {
+    public PaymentServiceImpl(PaymentDAO paymentDAO) {
         this.paymentDAO = paymentDAO;
-        this.orderDAO = orderDAO;
     }
 
     /**
-     * Default constructor using default DAOs.
+     * Default constructor using default DAO.
      */
-    public PaymentService() {
-        this(new PaymentDAO(), new OrderDAO());
+    public PaymentServiceImpl() {
+        this(new PaymentDAO());
     }
 
     /**
@@ -41,6 +37,7 @@ public class PaymentService {
      * @return list of all payments
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<Payment> getAllPayments() throws SQLException {
         LOGGER.log(Level.INFO, "Fetching all payments");
         return paymentDAO.findAll();
@@ -52,6 +49,7 @@ public class PaymentService {
      * @return list of payments for the order
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<Payment> getPaymentsByOrder(int orderId) throws SQLException {
         LOGGER.log(Level.INFO, "Fetching payments for order ID: {0}", orderId);
         return paymentDAO.findByOrder(orderId);
@@ -63,6 +61,7 @@ public class PaymentService {
      * @return list of payments for the client
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<Payment> getPaymentsByClient(int clientId) throws SQLException {
         LOGGER.log(Level.INFO, "Fetching payments for client ID: {0}", clientId);
         return paymentDAO.findByClient(clientId);
@@ -74,6 +73,7 @@ public class PaymentService {
      * @return total amount paid
      * @throws SQLException if database error occurs
      */
+    @Override
     public double getTotalPaidForOrder(int orderId) throws SQLException {
         return paymentDAO.getTotalPaidForOrder(orderId);
     }
@@ -84,6 +84,7 @@ public class PaymentService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if validation fails
      */
+    @Override
     public void addPayment(Payment payment) throws SQLException {
         validatePayment(payment);
         LOGGER.log(Level.INFO, "Adding new payment for order ID: {0}, amount: {1}", 
@@ -100,6 +101,7 @@ public class PaymentService {
      * @param comment optional comment
      * @throws SQLException if database error occurs
      */
+    @Override
     public void addDepositPayment(int orderId, double amount, String comment) throws SQLException {
         Payment payment = new Payment();
         payment.setOrderId(orderId);
@@ -116,6 +118,7 @@ public class PaymentService {
      * @param comment optional comment
      * @throws SQLException if database error occurs
      */
+    @Override
     public void addFullPayment(int orderId, double amount, String comment) throws SQLException {
         Payment payment = new Payment();
         payment.setOrderId(orderId);
@@ -131,6 +134,7 @@ public class PaymentService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if validation fails
      */
+    @Override
     public void updatePayment(Payment payment) throws SQLException {
         validatePayment(payment);
         if (payment.getPaymentId() <= 0) {
@@ -149,10 +153,9 @@ public class PaymentService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if payment ID is invalid
      */
+    @Override
     public void deletePayment(int paymentId, int orderId) throws SQLException {
-        if (paymentId <= 0) {
-            throw new IllegalArgumentException("Payment ID must be positive");
-        }
+        ValidationUtils.validatePositiveId(paymentId, "Payment ID");
         LOGGER.log(Level.INFO, "Deleting payment ID: {0}", paymentId);
         paymentDAO.delete(paymentId);
         updateOrderPaymentStatus(orderId);
@@ -160,15 +163,14 @@ public class PaymentService {
     }
 
     /**
-     * Delete a payment by ID.
-     * Note: This doesn't automatically update the order payment status.
+     * Delete a payment by ID without updating order status.
+     * Use deletePayment(paymentId, orderId) if you need to update order status.
      * @param paymentId the payment ID to delete
      * @throws SQLException if database error occurs
      */
+    @Override
     public void deletePayment(int paymentId) throws SQLException {
-        if (paymentId <= 0) {
-            throw new IllegalArgumentException("Payment ID must be positive");
-        }
+        ValidationUtils.validatePositiveId(paymentId, "Payment ID");
         LOGGER.log(Level.INFO, "Deleting payment ID: {0}", paymentId);
         paymentDAO.delete(paymentId);
         LOGGER.log(Level.INFO, "Payment deleted successfully: {0}", paymentId);
@@ -188,37 +190,26 @@ public class PaymentService {
 
     /**
      * Calculate payment status based on total paid vs selling price.
+     * Delegates to PriceCalculator utility to avoid duplication.
      * @param totalPaid the total amount paid
      * @param sellingPrice the order selling price
      * @return the payment status string
      */
+    @Override
     public String calculatePaymentStatus(double totalPaid, double sellingPrice) {
-        if (totalPaid <= 0) {
-            return "Unpaid";
-        } else if (totalPaid < sellingPrice) {
-            return "Partial";
-        } else {
-            return "Paid";
-        }
+        return ui.util.PriceCalculator.determinePaymentStatus(sellingPrice, totalPaid);
     }
 
     /**
      * Validate payment data before database operations.
+     * Uses ValidationUtils to avoid code duplication.
      * @param payment the payment to validate
      * @throws IllegalArgumentException if validation fails
      */
     private void validatePayment(Payment payment) {
-        if (payment == null) {
-            throw new IllegalArgumentException("Payment cannot be null");
-        }
-        if (payment.getOrderId() <= 0) {
-            throw new IllegalArgumentException("Order ID must be positive");
-        }
-        if (payment.getAmount() <= 0) {
-            throw new IllegalArgumentException("Payment amount must be positive");
-        }
-        if (payment.getPaymentMethod() == null || payment.getPaymentMethod().trim().isEmpty()) {
-            throw new IllegalArgumentException("Payment method is required");
-        }
+        ValidationUtils.validateNotNull(payment, "Payment");
+        ValidationUtils.validatePositiveId(payment.getOrderId(), "Order ID");
+        ValidationUtils.validatePositive(payment.getAmount(), "Payment amount");
+        ValidationUtils.validateNotEmpty(payment.getPaymentMethod(), "Payment method");
     }
 }

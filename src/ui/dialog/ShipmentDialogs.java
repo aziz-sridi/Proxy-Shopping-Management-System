@@ -1,6 +1,6 @@
 package ui.dialog;
 
-import service.ShipmentService;
+import service.IShipmentService;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -25,9 +25,9 @@ import java.sql.SQLException;
  */
 public class ShipmentDialogs {
 
-    private final ShipmentService shipmentService;
+    private final IShipmentService shipmentService;
 
-    public ShipmentDialogs(ShipmentService shipmentService) {
+    public ShipmentDialogs(IShipmentService shipmentService) {
         this.shipmentService = shipmentService;
     }
 

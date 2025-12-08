@@ -15,21 +15,22 @@ import java.util.List;
  * This class is kept for backward compatibility.
  */
 @Deprecated
-public class ShipmentFinancialService {
+public class ShipmentFinancialServiceImpl implements IShipmentFinancialService {
     
     private final OrderDAO orderDAO;
     
-    public ShipmentFinancialService(OrderDAO orderDAO) {
+    public ShipmentFinancialServiceImpl(OrderDAO orderDAO) {
         this.orderDAO = orderDAO;
     }
     
-    public ShipmentFinancialService() {
+    public ShipmentFinancialServiceImpl() {
         this(new OrderDAO());
     }
 
     /**
      * Calculate total number of orders in a shipment
      */
+    @Override
     public int calculateTotalOrders(Shipment shipment) throws SQLException {
         List<Order> orders = orderDAO.getOrdersByShipmentId(shipment.getShipmentId());
         return orders.size();
@@ -39,6 +40,7 @@ public class ShipmentFinancialService {
      * Calculate total cost of goods for all orders in a shipment
      * Formula: orderCost = unitPriceEUR * conversionRate * quantity
      */
+    @Override
     public double calculateTotalCostOfGoods(Shipment shipment) throws SQLException {
         List<Order> orders = orderDAO.getOrdersByShipmentId(shipment.getShipmentId());
         Settings settings = SettingsManager.getCurrentSettings();
@@ -56,6 +58,7 @@ public class ShipmentFinancialService {
      * Calculate total revenue for all orders in a shipment
      * Formula: orderRevenue = sellingPriceTND * quantity
      */
+    @Override
     public double calculateTotalRevenue(Shipment shipment) throws SQLException {
         List<Order> orders = orderDAO.getOrdersByShipmentId(shipment.getShipmentId());
         Settings settings = SettingsManager.getCurrentSettings();
@@ -75,6 +78,7 @@ public class ShipmentFinancialService {
      * Calculate total expenses for a shipment
      * Formula: totalExpenses = totalCostOfGoods + transportationCost + otherCosts
      */
+    @Override
     public double calculateTotalExpenses(Shipment shipment) throws SQLException {
         double totalCostOfGoods = calculateTotalCostOfGoods(shipment);
         return totalCostOfGoods + shipment.getTransportationCost() + shipment.getOtherCosts();
@@ -84,6 +88,7 @@ public class ShipmentFinancialService {
      * Calculate net profit for a shipment
      * Formula: netProfit = totalRevenue - totalExpenses
      */
+    @Override
     public double calculateNetProfit(Shipment shipment) throws SQLException {
         double totalRevenue = calculateTotalRevenue(shipment);
         double totalExpenses = calculateTotalExpenses(shipment);
@@ -93,6 +98,7 @@ public class ShipmentFinancialService {
     /**
      * Get complete financial summary for a shipment
      */
+    @Override
     public ShipmentFinancialSummary getFinancialSummary(Shipment shipment) throws SQLException {
         ShipmentFinancialSummary summary = new ShipmentFinancialSummary();
         summary.setShipment(shipment);

@@ -1,6 +1,7 @@
-package ui.viewController;
+package Controller;
 
-import service.ClientService;
+import service.IClientService;
+import service.ClientServiceImpl;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -17,9 +18,9 @@ import java.sql.SQLException;
 import java.util.ResourceBundle;
 import java.util.function.Consumer;
 
-public class ClientsViewController implements Initializable {
+public class ClientsController implements Initializable {
 
-    private final ClientService clientService = new ClientService();
+    private final IClientService clientService = new ClientServiceImpl();
     private final ClientDialogs dialogs = new ClientDialogs(clientService);
     private Consumer<Client> historyOpener;
     private Runnable orderRefreshCallback;
@@ -84,7 +85,7 @@ public class ClientsViewController implements Initializable {
                 btn.getStyleClass().add("btn-primary");
                 btn.setOnAction(e -> {
                     Client client = getTableView().getItems().get(getIndex());
-                    dialogs.showAddOrderDialog(client, orderRefreshCallback, ClientsViewController.this::showError);
+                    dialogs.showAddOrderDialog(client, orderRefreshCallback, ClientsController.this::showError);
                 });
             }
 
@@ -106,13 +107,13 @@ public class ClientsViewController implements Initializable {
             private final HBox box = new HBox(5, btnEdit, btnDelete, btnHistory);
 
             {
-                btnEdit.getStyleClass().addAll("modern-button", "button-secondary");
-                btnDelete.getStyleClass().addAll("modern-button", "button-error");
-                btnHistory.getStyleClass().addAll("modern-button", "button-secondary");
+                btnEdit.getStyleClass().addAll("app-button", "button-secondary");
+                btnDelete.getStyleClass().addAll("app-button", "button-error");
+                btnHistory.getStyleClass().addAll("app-button", "button-secondary");
 
                 btnEdit.setOnAction(e -> {
                     Client client = getTableView().getItems().get(getIndex());
-                    dialogs.showEditClientDialog(client, ClientsViewController.this::loadClients, ClientsViewController.this::showError);
+                    dialogs.showEditClientDialog(client, ClientsController.this::loadClients, ClientsController.this::showError);
                 });
                 btnDelete.setOnAction(e -> {
                     Client client = getTableView().getItems().get(getIndex());

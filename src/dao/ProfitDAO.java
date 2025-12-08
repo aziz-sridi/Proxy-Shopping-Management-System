@@ -1,19 +1,19 @@
 package dao;
 
 import model.Profit;
-import util.DBConnection;
 
 import java.sql.*;
 
-public class ProfitDAO {
+public class ProfitDAO extends BaseDAO<Profit> {
 
     public void upsertProfit(Profit p) throws SQLException {
-        // simple implementation: delete existing profit for order then insert new one
-        try (Connection conn = DBConnection.getConnection()) {
+        executeInTransaction(conn -> {
+            // Delete existing profit for order
             try (PreparedStatement del = conn.prepareStatement("DELETE FROM profits WHERE order_id = ?")) {
                 del.setInt(1, p.getOrderId());
                 del.executeUpdate();
             }
+            // Insert new profit
             try (PreparedStatement ins = conn.prepareStatement("INSERT INTO profits (order_id, original_rate, custom_rate, shipment_cost, calculated_profit) VALUES (?,?,?,?,?)")) {
                 ins.setInt(1, p.getOrderId());
                 ins.setDouble(2, p.getOriginalRate());
@@ -22,6 +22,6 @@ public class ProfitDAO {
                 ins.setDouble(5, p.getCalculatedProfit());
                 ins.executeUpdate();
             }
-        }
+        });
     }
 }

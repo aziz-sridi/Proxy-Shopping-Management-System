@@ -4,8 +4,6 @@ import dao.OrderDAO;
 import dao.PaymentDAO;
 import model.Order;
 import model.Platform;
-import model.Settings;
-import util.SettingsManager;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -16,9 +14,9 @@ import java.util.logging.Logger;
  * Service layer for Order-related business logic.
  * Handles validation, price calculations, logging, and delegates CRUD operations to OrderDAO.
  */
-public class OrderService {
+public class OrderServiceImpl implements IOrderService {
 
-    private static final Logger LOGGER = Logger.getLogger(OrderService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(OrderServiceImpl.class.getName());
     private final OrderDAO orderDAO;
     private final PaymentDAO paymentDAO;
 
@@ -27,7 +25,7 @@ public class OrderService {
      * @param orderDAO the DAO to use for order database operations
      * @param paymentDAO the DAO to use for payment database operations
      */
-    public OrderService(OrderDAO orderDAO, PaymentDAO paymentDAO) {
+    public OrderServiceImpl(OrderDAO orderDAO, PaymentDAO paymentDAO) {
         this.orderDAO = orderDAO;
         this.paymentDAO = paymentDAO;
     }
@@ -35,7 +33,7 @@ public class OrderService {
     /**
      * Default constructor using default DAOs.
      */
-    public OrderService() {
+    public OrderServiceImpl() {
         this(new OrderDAO(), new PaymentDAO());
     }
 
@@ -44,6 +42,7 @@ public class OrderService {
      * @return list of all orders
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<Order> getAllOrders() throws SQLException {
         LOGGER.log(Level.INFO, "Fetching all orders");
         return orderDAO.findAll();
@@ -55,6 +54,7 @@ public class OrderService {
      * @return list of orders for the shipment
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<Order> getOrdersByShipment(int shipmentId) throws SQLException {
         LOGGER.log(Level.INFO, "Fetching orders for shipment ID: {0}", shipmentId);
         return orderDAO.findByShipment(shipmentId);
@@ -66,6 +66,7 @@ public class OrderService {
      * @return list of orders for the client
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<Order> getOrdersByClient(int clientId) throws SQLException {
         LOGGER.log(Level.INFO, "Fetching orders for client ID: {0}", clientId);
         return orderDAO.findByClient(clientId);
@@ -77,6 +78,7 @@ public class OrderService {
      * @return the order or null if not found
      * @throws SQLException if database error occurs
      */
+    @Override
     public Order getOrderById(int orderId) throws SQLException {
         LOGGER.log(Level.INFO, "Fetching order ID: {0}", orderId);
         return orderDAO.findById(orderId);
@@ -88,6 +90,7 @@ public class OrderService {
      * @return list of orders for the platform
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<Order> getOrdersByPlatform(Platform platform) throws SQLException {
         LOGGER.log(Level.INFO, "Fetching orders for platform: {0}", platform);
         return orderDAO.findByPlatform(platform);
@@ -100,6 +103,7 @@ public class OrderService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if validation fails
      */
+    @Override
     public int addOrder(Order order) throws SQLException {
         validateOrder(order);
         calculateSellingPrice(order);
@@ -115,6 +119,7 @@ public class OrderService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if validation fails
      */
+    @Override
     public void insertOrder(Order order) throws SQLException {
         validateOrder(order);
         calculateSellingPrice(order);
@@ -129,13 +134,10 @@ public class OrderService {
      * @param status the new payment status
      * @throws SQLException if database error occurs
      */
+    @Override
     public void updatePaymentStatus(int orderId, String status) throws SQLException {
-        if (orderId <= 0) {
-            throw new IllegalArgumentException("Order ID must be positive");
-        }
-        if (status == null || status.trim().isEmpty()) {
-            throw new IllegalArgumentException("Payment status cannot be empty");
-        }
+        ValidationUtils.validatePositiveId(orderId, "Order ID");
+        ValidationUtils.validateNotEmpty(status, "Payment status");
         LOGGER.log(Level.INFO, "Updating payment status for order {0} to {1}", new Object[]{orderId, status});
         orderDAO.updatePaymentStatus(orderId, status);
     }
@@ -145,6 +147,7 @@ public class OrderService {
      * @param order the order to update
      * @throws SQLException if database error occurs
      */
+    @Override
     public void recalculatePaymentStatus(Order order) throws SQLException {
         double totalPaid = paymentDAO.getTotalPaidForOrder(order.getOrderId());
         double sellingPrice = order.getSellingPrice();
@@ -168,6 +171,7 @@ public class OrderService {
      * @return the remaining amount to pay
      * @throws SQLException if database error occurs
      */
+    @Override
     public double getRemainingAmount(Order order) throws SQLException {
         double totalPaid = paymentDAO.getTotalPaidForOrder(order.getOrderId());
         return Math.max(0, order.getSellingPrice() - totalPaid);
@@ -175,34 +179,66 @@ public class OrderService {
 
     /**
      * Calculate selling price based on original price and settings.
+     * Delegates to PriceCalculator utility.
      * @param originalPriceEUR the original price in EUR
      * @param quantity the quantity
      * @return the calculated selling price in TND
      */
+    @Override
     public double calculateSellingPrice(double originalPriceEUR, int quantity) {
-        Settings settings = SettingsManager.getCurrentSettings();
-        double sellingMultiplier = settings.getSellingMultiplier();
-        return originalPriceEUR * sellingMultiplier * quantity;
+        return ui.util.PriceCalculator.calculateTotalSellingPrice(originalPriceEUR, quantity);
     }
 
     /**
      * Calculate deposit amount (50% of total).
+     * Delegates to PriceCalculator utility.
      * @param totalSellingPrice the total selling price
      * @return the deposit amount
      */
+    @Override
     public double calculateDeposit(double totalSellingPrice) {
-        return totalSellingPrice * 0.5;
+        return ui.util.PriceCalculator.calculateDeposit(totalSellingPrice);
+    }
+
+    /**
+     * Delete an order by ID.
+     * @param orderId the order ID
+     * @throws SQLException if database error occurs
+     */
+    @Override
+    public void deleteOrder(int orderId) throws SQLException {
+        ValidationUtils.validatePositiveId(orderId, "Order ID");
+        LOGGER.log(Level.INFO, "Deleting order ID: {0}", orderId);
+        orderDAO.delete(orderId);
+        LOGGER.log(Level.INFO, "Order deleted successfully");
+    }
+
+    /**
+     * Update an existing order.
+     * @param order the order to update
+     * @throws SQLException if database error occurs
+     * @throws IllegalArgumentException if validation fails
+     */
+    @Override
+    public void updateOrder(Order order) throws SQLException {
+        if (order == null || order.getOrderId() <= 0) {
+            throw new IllegalArgumentException("Order must be valid with a positive ID");
+        }
+        validateOrder(order);
+        LOGGER.log(Level.INFO, "Updating order ID: {0}", order.getOrderId());
+        orderDAO.update(order);
+        LOGGER.log(Level.INFO, "Order updated successfully");
     }
 
     /**
      * Calculate selling price for an order and set it.
+     * Uses PriceCalculator utility to avoid duplication.
      * @param order the order to calculate price for
      */
     private void calculateSellingPrice(Order order) {
         if (order.getSellingPrice() <= 0 && order.getOriginalPrice() > 0) {
-            Settings settings = SettingsManager.getCurrentSettings();
-            double sellingMultiplier = settings.getSellingMultiplier();
-            double sellingPrice = order.getOriginalPrice() * sellingMultiplier * order.getQuantity();
+            double sellingPrice = ui.util.PriceCalculator.calculateTotalSellingPrice(
+                order.getOriginalPrice(), order.getQuantity());
             order.setSellingPrice(sellingPrice);
             LOGGER.log(Level.INFO, "Calculated selling price: {0}", sellingPrice);
         }
@@ -210,24 +246,17 @@ public class OrderService {
 
     /**
      * Validate order data before database operations.
+     * Uses ValidationUtils to avoid code duplication.
      * @param order the order to validate
      * @throws IllegalArgumentException if validation fails
      */
     private void validateOrder(Order order) {
-        if (order == null) {
-            throw new IllegalArgumentException("Order cannot be null");
-        }
-        if (order.getClientId() <= 0) {
-            throw new IllegalArgumentException("Client ID must be positive");
-        }
+        ValidationUtils.validateNotNull(order, "Order");
+        ValidationUtils.validatePositiveId(order.getClientId(), "Client ID");
         if (order.getShipmentId() == null || order.getShipmentId() <= 0) {
             throw new IllegalArgumentException("Shipment must be selected");
         }
-        if (order.getQuantity() <= 0) {
-            throw new IllegalArgumentException("Quantity must be positive");
-        }
-        if (order.getOriginalPrice() <= 0) {
-            throw new IllegalArgumentException("Original price must be positive");
-        }
+        ValidationUtils.validatePositiveId(order.getQuantity(), "Quantity");
+        ValidationUtils.validatePositive(order.getOriginalPrice(), "Original price");
     }
 }

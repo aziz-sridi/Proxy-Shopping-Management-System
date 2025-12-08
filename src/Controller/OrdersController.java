@@ -1,10 +1,15 @@
-package ui.viewController;
+package Controller;
 
-import service.ClientService;
-import service.DeliveryOptionService;
-import service.OrderService;
-import service.ShipmentService;
-import service.PaymentService;
+import service.IClientService;
+import service.ClientServiceImpl;
+import service.IDeliveryOptionService;
+import service.DeliveryOptionServiceImpl;
+import service.IOrderService;
+import service.OrderServiceImpl;
+import service.IShipmentService;
+import service.ShipmentServiceImpl;
+import service.IPaymentService;
+import service.PaymentServiceImpl;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -13,6 +18,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import model.Client;
 import model.DeliveryOption;
 import model.Order;
@@ -31,14 +37,14 @@ import java.util.ResourceBundle;
  * ViewController for OrdersView - handles all order-related UI interactions.
  * Refactored to use helper dialog classes for better maintainability.
  */
-public class OrdersViewController implements Initializable {
+public class OrdersController implements Initializable {
 
     // Services
-    private final OrderService orderService = new OrderService();
-    private final ClientService clientService = new ClientService();
-    private final ShipmentService shipmentService = new ShipmentService();
-    private final DeliveryOptionService deliveryOptionService = new DeliveryOptionService();
-    private final PaymentService paymentService = new PaymentService();
+    private final IOrderService orderService = new OrderServiceImpl();
+    private final IClientService clientService = new ClientServiceImpl();
+    private final IShipmentService shipmentService = new ShipmentServiceImpl();
+    private final IDeliveryOptionService deliveryOptionService = new DeliveryOptionServiceImpl();
+    private final IPaymentService paymentService = new PaymentServiceImpl();
 
     // Dialog helpers
     private final OrderDialogs orderDialogs;
@@ -52,7 +58,6 @@ public class OrdersViewController implements Initializable {
 
     // Callbacks for refreshing other views
     private Runnable paymentRefreshCallback;
-    private Runnable shipmentRefreshCallback;
 
     // FXML injected components
     @FXML private TextField txtClientSearch;
@@ -71,7 +76,7 @@ public class OrdersViewController implements Initializable {
     @FXML private TableColumn<Order, String> colStatus;
     @FXML private TableColumn<Order, Void> colActions;
 
-    public OrdersViewController() {
+    public OrdersController() {
         this.orderDialogs = new OrderDialogs(orderService, paymentService);
         this.paymentDialogs = new PaymentDialogs(paymentService, orderService);
     }
@@ -85,18 +90,15 @@ public class OrdersViewController implements Initializable {
     }
 
     private void setupFilters() {
-        // Status filter
         cbStatusFilter.getItems().addAll("All", "Unpaid", "Partial", "Paid");
         cbStatusFilter.setValue("All");
-        cbStatusFilter.getStyleClass().add("modern-field");
+        cbStatusFilter.getStyleClass().add("app-field");
 
-        // Platform filter
         cbPlatformFilter.getItems().addAll("All Platforms", "Shein", "Temu", "AliExpress", "Alibaba", "Other");
         cbPlatformFilter.setValue("All Platforms");
-        cbPlatformFilter.getStyleClass().add("modern-field");
+        cbPlatformFilter.getStyleClass().add("app-field");
 
-        // Search field
-        txtClientSearch.getStyleClass().add("modern-field");
+        txtClientSearch.getStyleClass().add("app-field");
 
         // Add filter listeners
         txtClientSearch.textProperty().addListener((obs, oldVal, newVal) -> applyFilters());
@@ -145,15 +147,30 @@ public class OrdersViewController implements Initializable {
 
         colStatus.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getPaymentStatus()));
 
-        // Actions column with button - hidden for paid orders
         colActions.setCellFactory(col -> new TableCell<>() {
             private final Button btnPay = new Button("+ Payment");
+            private final Button btnEdit = new Button("Edit");
+            private final Button btnDelete = new Button("Delete");
+            private final HBox box = new HBox(5, btnPay, btnEdit, btnDelete);
 
             {
-                btnPay.getStyleClass().addAll("modern-button", "button-primary");
+                btnPay.getStyleClass().addAll("app-button", "button-primary");
+                btnEdit.getStyleClass().addAll("app-button", "button-secondary");
+                btnDelete.getStyleClass().addAll("app-button", "button-error");
+                
                 btnPay.setOnAction(e -> {
                     Order order = getTableView().getItems().get(getIndex());
                     openAddPaymentDialog(order);
+                });
+                
+                btnEdit.setOnAction(e -> {
+                    Order order = getTableView().getItems().get(getIndex());
+                    editOrder(order);
+                });
+                
+                btnDelete.setOnAction(e -> {
+                    Order order = getTableView().getItems().get(getIndex());
+                    deleteOrder(order);
                 });
             }
 
@@ -164,11 +181,9 @@ public class OrdersViewController implements Initializable {
                     setGraphic(null);
                 } else {
                     Order order = getTableView().getItems().get(getIndex());
-                    if ("Paid".equalsIgnoreCase(order.getPaymentStatus())) {
-                        setGraphic(null);
-                    } else {
-                        setGraphic(btnPay);
-                    }
+                    // Hide payment button if order is already paid
+                    btnPay.setVisible(!("Paid".equalsIgnoreCase(order.getPaymentStatus())));
+                    setGraphic(box);
                 }
             }
         });
@@ -237,6 +252,7 @@ public class OrdersViewController implements Initializable {
     public void refreshData() {
         loadOrders();
         loadClients();
+        loadShipments();
     }
 
     /**
@@ -247,21 +263,15 @@ public class OrdersViewController implements Initializable {
     }
 
     /**
-     * Set callback for refreshing shipments view when shipments are modified
+     * Public method to refresh shipments - updates the shipment combo box in order dialogs
      */
-    public void setShipmentRefreshCallback(Runnable callback) {
-        this.shipmentRefreshCallback = callback;
+    public void refreshShipments() {
+        loadShipments();
     }
 
     private void notifyPaymentRefresh() {
         if (paymentRefreshCallback != null) {
             paymentRefreshCallback.run();
-        }
-    }
-
-    private void notifyShipmentRefresh() {
-        if (shipmentRefreshCallback != null) {
-            shipmentRefreshCallback.run();
         }
     }
 
@@ -324,6 +334,29 @@ public class OrdersViewController implements Initializable {
             },
             null
         );
+    }
+
+    private void editOrder(Order order) {
+        orderDialogs.openEditOrderDialog(
+            order,
+            clientData,
+            shipmentData,
+            deliveryData,
+            this::loadOrders
+        );
+    }
+
+    private void deleteOrder(Order order) {
+        if (DialogUtils.showConfirmation("Delete Order", 
+                "Are you sure you want to delete order #" + order.getOrderId() + "?")) {
+            try {
+                orderService.deleteOrder(order.getOrderId());
+                loadOrders();
+                notifyPaymentRefresh();
+            } catch (SQLException e) {
+                DialogUtils.showError("Error deleting order: " + e.getMessage());
+            }
+        }
     }
 
     private void showClientInfoPopup(int clientId) {

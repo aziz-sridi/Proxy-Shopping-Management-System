@@ -1,7 +1,9 @@
-package ui.viewController;
+package Controller;
 
-import service.OrderService;
-import service.PaymentService;
+import service.IOrderService;
+import service.OrderServiceImpl;
+import service.IPaymentService;
+import service.PaymentServiceImpl;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -21,7 +23,7 @@ import java.time.format.DateTimeFormatter;
  * ViewController for PaymentsView - handles all payment-related UI interactions.
  * Refactored to use PaymentDialogs helper class for better maintainability.
  */
-public class PaymentsViewController {
+public class PaymentsController {
 
     @FXML private TableView<Payment> paymentsTable;
     @FXML private TextField txtSearch;
@@ -34,8 +36,8 @@ public class PaymentsViewController {
     @FXML private TableColumn<Payment, String> colComment;
     @FXML private TableColumn<Payment, Void> colActions;
 
-    private final PaymentService paymentService;
-    private final OrderService orderService;
+    private final IPaymentService paymentService;
+    private final IOrderService orderService;
     private final PaymentDialogs paymentDialogs;
     private final ObservableList<Payment> paymentData = FXCollections.observableArrayList();
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -43,9 +45,9 @@ public class PaymentsViewController {
     // Callback for refreshing orders view when payments are edited/deleted
     private Runnable orderRefreshCallback;
 
-    public PaymentsViewController() {
-        this.paymentService = new PaymentService();
-        this.orderService = new OrderService();
+    public PaymentsController() {
+        this.paymentService = new PaymentServiceImpl();
+        this.orderService = new OrderServiceImpl();
         this.paymentDialogs = new PaymentDialogs(paymentService, orderService);
     }
 
@@ -112,8 +114,8 @@ public class PaymentsViewController {
             private final HBox box = new HBox(5, btnEdit, btnDelete);
 
             {
-                btnEdit.getStyleClass().addAll("modern-button", "button-secondary");
-                btnDelete.getStyleClass().addAll("modern-button", "button-error");
+                btnEdit.getStyleClass().addAll("app-button", "button-secondary");
+                btnDelete.getStyleClass().addAll("app-button", "button-error");
 
                 btnEdit.setOnAction(e -> {
                     Payment p = getTableView().getItems().get(getIndex());

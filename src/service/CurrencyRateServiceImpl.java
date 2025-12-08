@@ -12,23 +12,23 @@ import java.util.logging.Logger;
  * Service layer for CurrencyRate-related business logic.
  * Handles validation, logging, and delegates CRUD operations to CurrencyRateDAO.
  */
-public class CurrencyRateService {
+public class CurrencyRateServiceImpl implements ICurrencyRateService {
 
-    private static final Logger LOGGER = Logger.getLogger(CurrencyRateService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(CurrencyRateServiceImpl.class.getName());
     private final CurrencyRateDAO currencyRateDAO;
 
     /**
      * Constructor with dependency injection for CurrencyRateDAO.
      * @param currencyRateDAO the DAO to use for database operations
      */
-    public CurrencyRateService(CurrencyRateDAO currencyRateDAO) {
+    public CurrencyRateServiceImpl(CurrencyRateDAO currencyRateDAO) {
         this.currencyRateDAO = currencyRateDAO;
     }
 
     /**
      * Default constructor using default CurrencyRateDAO.
      */
-    public CurrencyRateService() {
+    public CurrencyRateServiceImpl() {
         this(new CurrencyRateDAO());
     }
 
@@ -39,6 +39,7 @@ public class CurrencyRateService {
      * @return list of historical currency rates
      * @throws SQLException if database error occurs
      */
+    @Override
     public List<CurrencyRate> getRateHistory(String baseCurrency, String targetCurrency) throws SQLException {
         validateCurrencyPair(baseCurrency, targetCurrency);
         LOGGER.log(Level.INFO, "Fetching rate history for {0}/{1}", new Object[]{baseCurrency, targetCurrency});
@@ -52,6 +53,7 @@ public class CurrencyRateService {
      * @return the latest currency rate, or null if not found
      * @throws SQLException if database error occurs
      */
+    @Override
     public CurrencyRate getLatestRate(String baseCurrency, String targetCurrency) throws SQLException {
         validateCurrencyPair(baseCurrency, targetCurrency);
         LOGGER.log(Level.INFO, "Fetching latest rate for {0}/{1}", new Object[]{baseCurrency, targetCurrency});
@@ -64,6 +66,7 @@ public class CurrencyRateService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if validation fails
      */
+    @Override
     public void addRate(CurrencyRate rate) throws SQLException {
         validateCurrencyRate(rate);
         LOGGER.log(Level.INFO, "Adding new currency rate: {0}/{1} = {2}", 
@@ -80,6 +83,7 @@ public class CurrencyRateService {
      * @return the converted amount, or the original amount if no rate found
      * @throws SQLException if database error occurs
      */
+    @Override
     public double convert(double amount, String baseCurrency, String targetCurrency) throws SQLException {
         CurrencyRate rate = getLatestRate(baseCurrency, targetCurrency);
         if (rate == null) {

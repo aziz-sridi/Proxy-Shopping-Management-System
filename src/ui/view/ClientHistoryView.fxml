@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="ui.viewController.ClientHistoryViewController">
+            fx:controller="Controller.ClientHistoryController">
 
     <center>
         <VBox spacing="10">

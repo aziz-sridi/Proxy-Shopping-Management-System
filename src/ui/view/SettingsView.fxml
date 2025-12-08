@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.*?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="ui.viewController.SettingsViewController">
+            fx:controller="Controller.SettingsController">
     <padding>
         <Insets topRightBottomLeft="20"/>
     </padding>

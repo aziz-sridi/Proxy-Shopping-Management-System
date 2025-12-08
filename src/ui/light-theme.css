@@ -48,25 +48,25 @@
 }
 
 /* Override global styles with light theme colors */
-.button, .modern-button {
+.button, .app-button {
     -fx-background-color: var(--color-accent);
     -fx-text-fill: var(--color-text-inverse);
     -fx-border-color: transparent;
     -fx-effect: dropshadow(gaussian, var(--shadow-light), 3, 0.0, 0, 2);
 }
 
-.button:hover, .modern-button:hover {
+.button:hover, .app-button:hover {
     -fx-background-color: var(--color-accent-hover);
     -fx-effect: dropshadow(gaussian, var(--shadow-heavy), 8, 0.0, 0, 4);
 }
 
-.button-secondary, .modern-button-secondary {
+.button-secondary, .app-button-secondary {
     -fx-background-color: transparent;
     -fx-border-color: var(--color-border);
     -fx-text-fill: var(--color-text-primary);
 }
 
-.button-secondary:hover, .modern-button-secondary:hover {
+.button-secondary:hover, .app-button-secondary:hover {
     -fx-background-color: var(--color-surface-hover);
 }
 
@@ -85,7 +85,7 @@
     -fx-text-fill: var(--color-text-inverse);
 }
 
-.text-field, .modern-field {
+.text-field, .app-field {
     -fx-background-color: var(--color-surface);
     -fx-text-fill: var(--color-text-primary);
     -fx-border-color: var(--color-border);
@@ -93,18 +93,18 @@
     -fx-effect: dropshadow(gaussian, var(--shadow-light), 2, 0.0, 0, 1);
 }
 
-.text-field:focused, .modern-field:focused {
+.text-field:focused, .app-field:focused {
     -fx-border-color: var(--color-border-focus);
     -fx-effect: dropshadow(gaussian, rgba(78,84,200,0.2), 6, 0.0, 0, 0);
 }
 
-.combo-box, .modern-combo {
+.combo-box, .app-combo {
     -fx-background-color: var(--color-surface);
     -fx-border-color: var(--color-border);
     -fx-text-fill: var(--color-text-primary);
 }
 
-.combo-box:focused, .modern-combo:focused {
+.combo-box:focused, .app-combo:focused {
     -fx-border-color: var(--color-border-focus);
     -fx-effect: dropshadow(gaussian, rgba(78,84,200,0.2), 6, 0.0, 0, 0);
 }
@@ -118,17 +118,17 @@
     -fx-background-color: var(--color-surface-hover);
 }
 
-.card, .modern-card {
+.card, .app-card {
     -fx-background-color: var(--color-surface);
     -fx-border-color: transparent;
     -fx-effect: dropshadow(gaussian, var(--shadow-medium), 8, 0.0, 0, 4);
 }
 
-.card:hover, .modern-card:hover {
+.card:hover, .app-card:hover {
     -fx-effect: dropshadow(gaussian, var(--shadow-heavy), 12, 0.0, 0, 6);
 }
 
-.table-view, .modern-table {
+.table-view, .app-table {
     -fx-background-color: var(--color-surface);
     -fx-border-color: var(--color-border);
     -fx-effect: dropshadow(gaussian, var(--shadow-medium), 8, 0.0, 0, 4);
@@ -171,7 +171,7 @@
     -fx-text-fill: inherit;
 }
 
-.tab-pane, .modern-tabs {
+.tab-pane, .app-tabs {
     -fx-background-color: var(--color-background);
 }
 
@@ -200,15 +200,15 @@
     -fx-text-fill: var(--color-text-primary);
 }
 
-.label-title, .modern-title {
+.label-title, .app-title {
     -fx-text-fill: var(--color-text-primary);
 }
 
-.label-subtitle, .modern-subtitle {
+.label-subtitle, .app-subtitle {
     -fx-text-fill: var(--color-text-secondary);
 }
 
-.label-caption, .modern-caption {
+.label-caption, .app-caption {
     -fx-text-fill: var(--color-text-tertiary);
 }
 

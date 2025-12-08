@@ -1,6 +1,7 @@
-package ui.viewController;
+package Controller;
 
-import service.ShipmentService;
+import service.IShipmentService;
+import service.ShipmentServiceImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -13,9 +14,9 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.ResourceBundle;
 
-public class DashboardViewController implements Initializable {
+public class DashboardController implements Initializable {
 
-    private final ShipmentService shipmentService = new ShipmentService();
+    private final IShipmentService shipmentService = new ShipmentServiceImpl();
     private final ObservableList<Shipment> shipmentData = FXCollections.observableArrayList();
 
     @FXML

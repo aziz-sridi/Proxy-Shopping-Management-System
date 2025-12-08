@@ -19,7 +19,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane styleClass="page-container" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ui.viewController.DashboardViewController">
+<BorderPane styleClass="page-container" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.DashboardController">
    <top>
       <VBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color: #ECF0F1; -fx-border-color: #BDC3C7; -fx-border-width: 0 0 2 0;" BorderPane.alignment="CENTER_LEFT">
          <padding>

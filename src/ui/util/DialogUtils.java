@@ -87,18 +87,10 @@ public class DialogUtils {
 
     /**
      * Parse a double from text, returning a default value if parsing fails.
+     * Delegates to PriceCalculator to avoid duplication.
      */
     public static double parseDouble(String text, double defaultValue) {
-        if (text == null || text.trim().isEmpty()) {
-            return defaultValue;
-        }
-        try {
-            // Handle locale issues with decimal separator
-            String cleanText = text.trim().replace(",", ".");
-            return Double.parseDouble(cleanText);
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
+        return PriceCalculator.parsePriceOrDefault(text, defaultValue);
     }
 
     /**
@@ -116,12 +108,12 @@ public class DialogUtils {
     }
 
     /**
-     * Create a styled TextField with the modern-field class.
+     * Create a styled TextField with the app-field class.
      */
     public static TextField createStyledTextField(String promptText) {
         TextField field = new TextField();
         field.setPromptText(promptText);
-        field.getStyleClass().add("modern-field");
+        field.getStyleClass().add("app-field");
         return field;
     }
 
@@ -142,7 +134,7 @@ public class DialogUtils {
     public static <T> ComboBox<T> createStyledComboBox(String promptText) {
         ComboBox<T> comboBox = new ComboBox<>();
         comboBox.setPromptText(promptText);
-        comboBox.getStyleClass().add("modern-field");
+        comboBox.getStyleClass().add("app-field");
         return comboBox;
     }
 

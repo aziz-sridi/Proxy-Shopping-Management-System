@@ -1,12 +1,17 @@
-package ui.viewController;
+package Controller;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.stage.Stage;
 import model.Client;
+import service.AuthService;
 
 import java.io.IOException;
 import java.net.URL;
@@ -16,7 +21,7 @@ import java.util.ResourceBundle;
  * Main ViewController - coordinates all view tabs and their controllers
  * All views are now loaded from FXML for consistency
  */
-public class MainViewController implements Initializable {
+public class MainController implements Initializable {
 
     @FXML
     private TabPane tabPane;
@@ -39,19 +44,76 @@ public class MainViewController implements Initializable {
     @FXML
     private Tab settingsTab;
 
+    @FXML
+    private Tab adminTab;
+
+    @FXML
+    private Tab logsTab;
+
+    @FXML
+    private Label userInfoLabel;
+
+    @FXML
+    private Button logoutButton;
+
     // Hold references to view controllers for refresh callbacks
-    private OrdersViewController ordersViewController;
-    private PaymentsViewController paymentsViewController;
-    private ShipmentsViewController shipmentsViewController;
+    private OrdersController ordersViewController;
+    private PaymentsController paymentsViewController;
+    private ShipmentsController shipmentsViewController;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        loadOrdersView();
-        loadClientsView();
-        loadShipmentsView();
-        loadPaymentsView();
-        loadSettingsView();
-        // Dashboard is loaded via FXML include in MainView.fxml
+        AuthService authService = AuthService.getInstance();
+        
+        // Set user info in header
+        if (authService.isLoggedIn()) {
+            userInfoLabel.setText("User: " + authService.getCurrentUser().getUsername() + 
+                " (" + authService.getCurrentUser().getRole() + ")");
+        }
+        
+        if (authService.isAdmin()) {
+            // Admin users only see User Management and Logs
+            removeBusinessTabs();
+            loadAdminView();
+            loadLogsView();
+        } else {
+            // Regular users see all business tabs
+            loadOrdersView();
+            loadClientsView();
+            loadShipmentsView();
+            loadPaymentsView();
+            loadSettingsView();
+            // Dashboard is loaded via FXML include in MainView.fxml
+            
+            // Hide admin and logs tabs for non-admin users
+            tabPane.getTabs().removeAll(adminTab, logsTab);
+        }
+    }
+
+    @FXML
+    public void handleLogout() {
+        try {
+            AuthService.getInstance().logout();
+            
+            // Load login screen
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/view/LoginView.fxml"));
+            Parent root = loader.load();
+            Scene scene = new Scene(root, 500, 400);
+            scene.getStylesheets().add(getClass().getResource("/ui/app.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/ui/light-theme.css").toExternalForm());
+
+            Stage stage = (Stage) logoutButton.getScene().getWindow();
+            stage.setTitle("Proxy Shopping Management - Login");
+            stage.setScene(scene);
+        } catch (IOException e) {
+            System.err.println("Error loading login screen: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    private void removeBusinessTabs() {
+        // Remove all business-related tabs for admin users
+        tabPane.getTabs().removeAll(clientsTab, ordersTab, shipmentsTab, paymentsTab, dashboardTab, settingsTab);
     }
 
     private void loadOrdersView() {
@@ -67,13 +129,6 @@ public class MainViewController implements Initializable {
                 }
             });
             
-            // Set up shipment refresh callback
-            ordersViewController.setShipmentRefreshCallback(() -> {
-                if (shipmentsViewController != null) {
-                    shipmentsViewController.refreshData();
-                }
-            });
-            
             ordersTab.setContent(ordersView);
         } catch (IOException e) {
             System.err.println("Error loading OrdersView: " + e.getMessage());
@@ -85,7 +140,7 @@ public class MainViewController implements Initializable {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/view/ClientsView.fxml"));
             Parent clientsView = loader.load();
-            ClientsViewController clientsController = loader.getController();
+            ClientsController clientsController = loader.getController();
 
             // Set up history opener callback
             clientsController.setHistoryOpener(client -> openClientHistoryTab(client));
@@ -112,6 +167,14 @@ public class MainViewController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/view/ShipmentsView.fxml"));
             Parent shipmentsView = loader.load();
             shipmentsViewController = loader.getController();
+            
+            // Set up shipment refresh callback so when shipments are added/edited/deleted in shipments view, orders view updates
+            shipmentsViewController.setOrderRefreshCallback(() -> {
+                if (ordersViewController != null) {
+                    ordersViewController.refreshShipments();
+                }
+            });
+            
             shipmentsTab.setContent(shipmentsView);
         } catch (IOException e) {
             System.err.println("Error loading ShipmentsView: " + e.getMessage());
@@ -150,6 +213,29 @@ public class MainViewController implements Initializable {
         }
     }
 
+    private void loadAdminView() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/view/AdminUsersView.fxml"));
+            Parent adminView = loader.load();
+            adminTab.setContent(adminView);
+            adminTab.setText("User Management");
+        } catch (IOException e) {
+            System.err.println("Error loading AdminUsersView: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void loadLogsView() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/view/LogsView.fxml"));
+            Parent logsView = loader.load();
+            logsTab.setContent(logsView);
+        } catch (IOException e) {
+            System.err.println("Error loading LogsView: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Opens a new tab showing the client's order and payment history
      */
@@ -157,7 +243,7 @@ public class MainViewController implements Initializable {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/view/ClientHistoryView.fxml"));
             Parent historyView = loader.load();
-            ClientHistoryViewController historyController = loader.getController();
+            ClientHistoryController historyController = loader.getController();
             historyController.setClient(client);
 
             Tab historyTab = new Tab("History: " + client.getUsername());

@@ -1,6 +1,7 @@
-package ui.viewController;
+package Controller;
 
-import service.ShipmentService;
+import service.IShipmentService;
+import service.ShipmentServiceImpl;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -22,14 +23,17 @@ import java.util.ResourceBundle;
  * ViewController for ShipmentsView - handles all shipment-related UI interactions.
  * Refactored to use ShipmentDialogs helper class for better maintainability.
  */
-public class ShipmentsViewController implements Initializable {
+public class ShipmentsController implements Initializable {
 
     // Services
-    private final ShipmentService shipmentService = new ShipmentService();
+    private final IShipmentService shipmentService = new ShipmentServiceImpl();
     private final ShipmentDialogs shipmentDialogs;
 
     // Observable data
     private final ObservableList<Shipment> shipmentData = FXCollections.observableArrayList();
+
+    // Callbacks for refreshing other views
+    private Runnable orderRefreshCallback;
 
     // FXML injected components
     @FXML private Button btnAddShipment;
@@ -41,7 +45,7 @@ public class ShipmentsViewController implements Initializable {
     @FXML private TableColumn<Shipment, String> colStatus;
     @FXML private TableColumn<Shipment, Void> colActions;
 
-    public ShipmentsViewController() {
+    public ShipmentsController() {
         this.shipmentDialogs = new ShipmentDialogs(shipmentService);
     }
 
@@ -65,9 +69,9 @@ public class ShipmentsViewController implements Initializable {
             private final Button btnDelete = new Button("Delete");
 
             {
-                btnViewOrders.getStyleClass().addAll("modern-button", "button-secondary");
-                btnEditShipment.getStyleClass().addAll("modern-button", "button-primary");
-                btnDelete.getStyleClass().addAll("modern-button", "button-error");
+                btnViewOrders.getStyleClass().addAll("app-button", "button-secondary");
+                btnEditShipment.getStyleClass().addAll("app-button", "button-primary");
+                btnDelete.getStyleClass().addAll("app-button", "button-error");
 
                 btnViewOrders.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-size: 11px;");
                 btnEditShipment.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white; -fx-font-size: 11px;");
@@ -80,17 +84,27 @@ public class ShipmentsViewController implements Initializable {
 
                 btnEditShipment.setOnAction(e -> {
                     Shipment shipment = getTableView().getItems().get(getIndex());
-                    shipmentDialogs.openEditShipmentDialog(shipment, this::refresh);
+                    shipmentDialogs.openEditShipmentDialog(shipment, () -> {
+                        loadShipments();
+                        notifyOrderRefresh();
+                    });
                 });
 
                 btnDelete.setOnAction(e -> {
                     Shipment shipment = getTableView().getItems().get(getIndex());
-                    shipmentDialogs.deleteShipment(shipment, this::refresh);
+                    shipmentDialogs.deleteShipment(shipment, () -> {
+                        loadShipments();
+                        notifyOrderRefresh();
+                    });
                 });
             }
 
-            private void refresh() {
-                loadShipments();
+            private void loadShipments() {
+                ShipmentsController.this.loadShipments();
+            }
+
+            private void notifyOrderRefresh() {
+                ShipmentsController.this.notifyOrderRefresh();
             }
 
             @Override
@@ -123,8 +137,24 @@ public class ShipmentsViewController implements Initializable {
         loadShipments();
     }
 
+    /**
+     * Set callback for refreshing orders view when shipments are modified
+     */
+    public void setOrderRefreshCallback(Runnable callback) {
+        this.orderRefreshCallback = callback;
+    }
+
+    private void notifyOrderRefresh() {
+        if (orderRefreshCallback != null) {
+            orderRefreshCallback.run();
+        }
+    }
+
     @FXML
     private void handleAddShipment() {
-        shipmentDialogs.openAddShipmentDialog(this::loadShipments);
+        shipmentDialogs.openAddShipmentDialog(() -> {
+            loadShipments();
+            notifyOrderRefresh();
+        });
     }
 }

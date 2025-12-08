@@ -11,23 +11,23 @@ import java.util.logging.Logger;
  * Service layer for Profit-related business logic.
  * Handles validation, logging, and delegates CRUD operations to ProfitDAO.
  */
-public class ProfitService {
+public class ProfitServiceImpl implements IProfitService {
 
-    private static final Logger LOGGER = Logger.getLogger(ProfitService.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ProfitServiceImpl.class.getName());
     private final ProfitDAO profitDAO;
 
     /**
      * Constructor with dependency injection for ProfitDAO.
      * @param profitDAO the DAO to use for database operations
      */
-    public ProfitService(ProfitDAO profitDAO) {
+    public ProfitServiceImpl(ProfitDAO profitDAO) {
         this.profitDAO = profitDAO;
     }
 
     /**
      * Default constructor using default ProfitDAO.
      */
-    public ProfitService() {
+    public ProfitServiceImpl() {
         this(new ProfitDAO());
     }
 
@@ -37,6 +37,7 @@ public class ProfitService {
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if validation fails
      */
+    @Override
     public void saveProfit(Profit profit) throws SQLException {
         validateProfit(profit);
         LOGGER.log(Level.INFO, "Saving profit for order ID: {0}, amount: {1}", 
@@ -55,6 +56,7 @@ public class ProfitService {
      * @param shipmentCostShare the order's share of shipment cost
      * @return the calculated profit
      */
+    @Override
     public Profit calculateProfit(int orderId, double originalRate, double customRate, 
                                    double originalPriceEUR, double sellingPriceTND, double shipmentCostShare) {
         Profit profit = new Profit();

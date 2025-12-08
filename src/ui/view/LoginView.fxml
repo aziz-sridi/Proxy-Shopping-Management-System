@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.LoginController">
+    <center>
+        <VBox alignment="CENTER" spacing="20.0" style="-fx-background-color: #f5f5f5;">
+            <padding>
+                <Insets bottom="50.0" left="50.0" right="50.0" top="50.0" />
+            </padding>
+            
+            <Label text="Login" textAlignment="CENTER">
+                <font>
+                    <Font name="System Bold" size="32.0" />
+                </font>
+            </Label>
+            
+            <VBox spacing="8.0">
+                <Label text="Username" />
+                <TextField fx:id="usernameField" promptText="Enter username" />
+            </VBox>
+            
+            <VBox spacing="8.0">
+                <Label text="Password" />
+                <PasswordField fx:id="passwordField" promptText="Enter password" />
+            </VBox>
+            
+            <Label fx:id="errorLabel" style="-fx-text-fill: red;" />
+            
+            <Button fx:id="loginButton" mnemonicParsing="false" onAction="#handleLogin" prefHeight="40.0" prefWidth="200.0" style="-fx-font-size: 14;" text="Login" />
+        </VBox>
+    </center>
+</BorderPane>

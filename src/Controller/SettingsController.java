@@ -1,4 +1,4 @@
-package ui.viewController;
+package Controller;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -12,7 +12,7 @@ import java.util.ResourceBundle;
 /**
  * ViewController for SettingsView - handles application settings management
  */
-public class SettingsViewController implements Initializable {
+public class SettingsController implements Initializable {
 
     @FXML private TextField txtConversionRate;
     @FXML private TextField txtSellingMultiplier;

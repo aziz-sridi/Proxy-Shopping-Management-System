@@ -1,4 +1,16 @@
 -- ============================
+-- Table: users (for authentication)
+-- ============================
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) CHECK (role IN ('admin','user')) DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================
 -- Table: clients
 -- ============================
 CREATE TABLE clients (
