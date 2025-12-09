@@ -1,15 +1,18 @@
 package dao;
 
 import model.Shipment;
+import util.DBConnection;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
-public class ShipmentDAO extends BaseDAO<Shipment> {
+public class ShipmentDAO {
 
     public void insert(Shipment s) throws SQLException {
         String sql = "INSERT INTO shipments (batch_name, departure_country, arrival_country, shipment_cost, departure_date, arrival_date, status, transportation_cost, other_costs) VALUES (?,?,?,?,?,?,?,?,?)";
-        executeUpdate(sql, ps -> {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, s.getBatchName());
             ps.setString(2, s.getDepartureCountry());
             ps.setString(3, s.getArrivalCountry());
@@ -19,12 +22,21 @@ public class ShipmentDAO extends BaseDAO<Shipment> {
             ps.setString(7, s.getStatus());
             ps.setDouble(8, s.getTransportationCost());
             ps.setDouble(9, s.getOtherCosts());
-        });
+            ps.executeUpdate();
+        }
     }
 
     public List<Shipment> findAll() throws SQLException {
+        List<Shipment> shipments = new ArrayList<>();
         String sql = "SELECT * FROM shipments ORDER BY shipment_id DESC";
-        return executeQuery(sql, null, this::mapShipment);
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                shipments.add(mapShipment(rs));
+            }
+        }
+        return shipments;
     }
 
     private Shipment mapShipment(ResultSet rs) throws SQLException {
@@ -46,7 +58,8 @@ public class ShipmentDAO extends BaseDAO<Shipment> {
 
     public void update(Shipment s) throws SQLException {
         String sql = "UPDATE shipments SET batch_name=?, departure_country=?, arrival_country=?, shipment_cost=?, departure_date=?, arrival_date=?, status=?, transportation_cost=?, other_costs=? WHERE shipment_id=?";
-        executeUpdate(sql, ps -> {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, s.getBatchName());
             ps.setString(2, s.getDepartureCountry());
             ps.setString(3, s.getArrivalCountry());
@@ -57,11 +70,16 @@ public class ShipmentDAO extends BaseDAO<Shipment> {
             ps.setDouble(8, s.getTransportationCost());
             ps.setDouble(9, s.getOtherCosts());
             ps.setInt(10, s.getShipmentId());
-        });
+            ps.executeUpdate();
+        }
     }
 
     public void delete(int shipmentId) throws SQLException {
         String sql = "DELETE FROM shipments WHERE shipment_id=?";
-        executeUpdate(sql, ps -> ps.setInt(1, shipmentId));
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, shipmentId);
+            ps.executeUpdate();
+        }
     }
 }

@@ -1,51 +1,77 @@
 package dao;
 
 import model.Client;
+import util.DBConnection;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
-public class ClientDAO extends BaseDAO<Client> {
+public class ClientDAO {
 
     public void insert(Client client) throws SQLException {
         String sql = "INSERT INTO clients (username, phone, source, address) VALUES (?,?,?,?)";
-        executeUpdate(sql, ps -> {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, client.getUsername());
             ps.setString(2, client.getPhone());
             ps.setString(3, client.getSource());
             ps.setString(4, client.getAddress());
-        });
+            ps.executeUpdate();
+        }
     }
 
     public void update(Client client) throws SQLException {
         String sql = "UPDATE clients SET username = ?, phone = ?, source = ?, address = ? WHERE client_id = ?";
-        executeUpdate(sql, ps -> {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, client.getUsername());
             ps.setString(2, client.getPhone());
             ps.setString(3, client.getSource());
             ps.setString(4, client.getAddress());
             ps.setInt(5, client.getClientId());
-        });
+            ps.executeUpdate();
+        }
     }
 
     public void delete(int clientId) throws SQLException {
         String sql = "DELETE FROM clients WHERE client_id = ?";
-        executeUpdate(sql, ps -> ps.setInt(1, clientId));
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, clientId);
+            ps.executeUpdate();
+        }
     }
 
     public List<Client> findAll() throws SQLException {
+        List<Client> clients = new ArrayList<>();
         String sql = "SELECT client_id, username, phone, source, address, created_at FROM clients ORDER BY client_id DESC";
-        return executeQuery(sql, null, this::mapClient);
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                clients.add(mapClient(rs));
+            }
+        }
+        return clients;
     }
 
     public List<Client> findByUsernameOrPhone(String keyword) throws SQLException {
+        List<Client> clients = new ArrayList<>();
         String sql = "SELECT client_id, username, phone, source, address, created_at FROM clients " +
                      "WHERE username LIKE ? OR phone LIKE ? ORDER BY client_id DESC";
-        return executeQuery(sql, ps -> {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             String pattern = "%" + keyword + "%";
             ps.setString(1, pattern);
             ps.setString(2, pattern);
-        }, this::mapClient);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    clients.add(mapClient(rs));
+                }
+            }
+        }
+        return clients;
     }
 
     private Client mapClient(ResultSet rs) throws SQLException {

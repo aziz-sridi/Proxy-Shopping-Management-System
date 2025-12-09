@@ -1,9 +1,6 @@
 package service;
 
-/**
- * Utility class for common validation logic across service layer.
- * Eliminates duplicate validation code.
- */
+
 public class ValidationUtils {
 
     private ValidationUtils() {
@@ -93,6 +90,28 @@ public class ValidationUtils {
     public static void validateExactLength(String value, int exactLength, String fieldName) {
         if (value != null && value.length() != exactLength) {
             throw new IllegalArgumentException(fieldName + " must be exactly " + exactLength + " characters");
+        }
+    }
+
+    /**
+     * Validate that a phone number is exactly 8 digits and starts with 2, 5, or 9.
+     * @param phoneNumber The phone number to validate
+     * @param fieldName The name of the field for error messages
+     * @throws IllegalArgumentException if phone number is invalid
+     */
+    public static void validatePhoneNumber(String phoneNumber, String fieldName) {
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " is required");
+        }
+        String trimmed = phoneNumber.trim();
+        if (trimmed.length() != 8) {
+            throw new IllegalArgumentException(fieldName + " must be exactly 8 digits");
+        }
+        if (!trimmed.matches("\\d{8}")) {
+            throw new IllegalArgumentException(fieldName + " must contain only digits");
+        }
+        if (!trimmed.matches("[259]\\d{7}")) {
+            throw new IllegalArgumentException(fieldName + " must start with 2, 5, or 9");
         }
     }
 }

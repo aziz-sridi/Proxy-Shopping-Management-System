@@ -114,9 +114,6 @@ public class ClientServiceImpl implements IClientService {
         ValidationUtils.validateNotNull(client, "Client");
         ValidationUtils.validateNotEmpty(client.getUsername(), "Username");
         ValidationUtils.validateMaxLength(client.getUsername(), 100, "Username");
-        // Phone validation - optional but if provided should be valid
-        if (client.getPhone() != null && !client.getPhone().isEmpty()) {
-            ValidationUtils.validateExactLength(client.getPhone(), 8, "Phone number");
-        }
+        ValidationUtils.validatePhoneNumber(client.getPhone(), "Phone number");
     }
 }

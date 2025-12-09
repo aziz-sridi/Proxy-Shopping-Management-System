@@ -3,15 +3,23 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import java.io.File;
 
 public class App extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("/ui/view/LoginView.fxml"));
+        // Load FXML from file system when running from src directory
+        File fxmlFile = new File("src/ui/view/LoginView.fxml");
+        Parent root = FXMLLoader.load(fxmlFile.toURI().toURL());
+        
         Scene scene = new Scene(root, 500, 400);
-        scene.getStylesheets().add(getClass().getResource("/ui/app.css").toExternalForm());
-        scene.getStylesheets().add(getClass().getResource("/ui/light-theme.css").toExternalForm());
+        
+        // Load CSS from file system
+        File cssFile1 = new File("src/ui/app.css");
+        File cssFile2 = new File("src/ui/light-theme.css");
+        scene.getStylesheets().add(cssFile1.toURI().toURL().toExternalForm());
+        scene.getStylesheets().add(cssFile2.toURI().toURL().toExternalForm());
         
         primaryStage.setTitle("Proxy Shopping Management - Login");
         primaryStage.setScene(scene);
