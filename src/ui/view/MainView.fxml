@@ -20,20 +20,20 @@
     </HBox>
   </top>
   <center>
-    <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
+    <TabPane fx:id="tabPane" tabClosingPolicy="SELECTED_TAB">
       <tabs>
-        <Tab fx:id="clientsTab" text="Clients" />
-        <Tab fx:id="ordersTab" text="Orders" />
-        <Tab fx:id="shipmentsTab" text="Shipments" />
-        <Tab fx:id="paymentsTab" text="Payments" />
-        <Tab fx:id="dashboardTab" text="Dashboard">
+        <Tab fx:id="clientsTab" text="Clients" closable="false" />
+        <Tab fx:id="ordersTab" text="Orders" closable="false" />
+        <Tab fx:id="shipmentsTab" text="Shipments" closable="false" />
+        <Tab fx:id="paymentsTab" text="Payments" closable="false" />
+        <Tab fx:id="dashboardTab" text="Dashboard" closable="false">
             <content>
                 <fx:include source="DashboardView.fxml" />
             </content>
         </Tab>
-        <Tab fx:id="settingsTab" text="Settings" />
-        <Tab fx:id="adminTab" text="Admin" />
-        <Tab fx:id="logsTab" text="Logs" />
+        <Tab fx:id="settingsTab" text="Settings" closable="false" />
+        <Tab fx:id="adminTab" text="Admin" closable="false" />
+        <Tab fx:id="logsTab" text="Logs" closable="false" />
       </tabs>
     </TabPane>
   </center>

@@ -1,15 +1,15 @@
 package Controller;
 
-import service.IClientService;
-import service.ClientServiceImpl;
-import service.IDeliveryOptionService;
-import service.DeliveryOptionServiceImpl;
-import service.IOrderService;
-import service.OrderServiceImpl;
-import service.IShipmentService;
-import service.ShipmentServiceImpl;
-import service.IPaymentService;
-import service.PaymentServiceImpl;
+import service.api.IClientService;
+import service.impl.ClientServiceImpl;
+import service.api.IDeliveryOptionService;
+import service.impl.DeliveryOptionServiceImpl;
+import service.api.IOrderService;
+import service.impl.OrderServiceImpl;
+import service.api.IShipmentService;
+import service.impl.ShipmentServiceImpl;
+import service.api.IPaymentService;
+import service.impl.PaymentServiceImpl;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -24,8 +24,8 @@ import model.DeliveryOption;
 import model.Order;
 import model.Platform;
 import model.Shipment;
-import ui.dialog.OrderDialogs;
-import ui.dialog.PaymentDialogs;
+import ui.dialog.order.OrderDialogs;
+import ui.dialog.payment.PaymentDialogs;
 import ui.util.DialogUtils;
 import ui.util.PriceCalculator;
 

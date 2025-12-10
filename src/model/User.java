@@ -10,7 +10,6 @@ public class User {
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
-    // Constructor
     public User() {
     }
 
@@ -29,7 +28,6 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
-    // Getters and Setters
     public int getUserId() {
         return userId;
     }

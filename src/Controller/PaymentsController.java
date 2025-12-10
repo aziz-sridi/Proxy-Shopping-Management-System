@@ -1,9 +1,9 @@
 package Controller;
 
-import service.IOrderService;
-import service.OrderServiceImpl;
-import service.IPaymentService;
-import service.PaymentServiceImpl;
+import service.api.IOrderService;
+import service.impl.OrderServiceImpl;
+import service.api.IPaymentService;
+import service.impl.PaymentServiceImpl;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -13,7 +13,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import model.Payment;
-import ui.dialog.PaymentDialogs;
+import ui.dialog.payment.PaymentDialogs;
 import ui.util.DialogUtils;
 
 import java.sql.SQLException;

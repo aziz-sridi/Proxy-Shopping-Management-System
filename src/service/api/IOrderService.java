@@ -1,4 +1,4 @@
-package service;
+package service.api;
 
 import model.Order;
 import model.Platform;
@@ -99,21 +99,22 @@ public interface IOrderService {
     double calculateSellingPrice(double originalPriceEUR, int quantity);
     
     /**
-     * Calculate deposit amount (50% of total).
+     * Calculate deposit amount based on selling price.
      * @param totalSellingPrice the total selling price
      * @return the deposit amount
      */
     double calculateDeposit(double totalSellingPrice);
-    
+
     /**
      * Delete an order by ID.
-     * @param orderId the order ID
+     * @param orderId the order ID to delete
      * @throws SQLException if database error occurs
+     * @throws IllegalArgumentException if order ID is invalid
      */
     void deleteOrder(int orderId) throws SQLException;
-    
+
     /**
-     * Update an existing order.
+     * Update an existing order with validation.
      * @param order the order to update
      * @throws SQLException if database error occurs
      * @throws IllegalArgumentException if validation fails

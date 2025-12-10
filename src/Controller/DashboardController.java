@@ -1,7 +1,7 @@
 package Controller;
 
-import service.IShipmentService;
-import service.ShipmentServiceImpl;
+import service.api.IShipmentService;
+import service.impl.ShipmentServiceImpl;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;

@@ -6,15 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-/**
- * Manages loading and saving of application settings
- */
 public class SettingsManager {
     
     private static final String SETTINGS_FILE = "settings.properties";
     private static Settings currentSettings;
-    
-    // Load settings from file or create default if file doesn't exist
     public static Settings loadSettings() {
         if (currentSettings != null) {
             return currentSettings;
@@ -50,7 +45,6 @@ public class SettingsManager {
         return currentSettings;
     }
     
-    // Save settings to file
     public static void saveSettings(Settings settings) {
         Properties props = new Properties();
         props.setProperty("conversionRate", String.valueOf(settings.getConversionRate()));
@@ -65,7 +59,6 @@ public class SettingsManager {
         }
     }
     
-    // Get current settings (loads if not already loaded)
     public static Settings getCurrentSettings() {
         if (currentSettings == null) {
             return loadSettings();
@@ -73,9 +66,14 @@ public class SettingsManager {
         return currentSettings;
     }
     
-    // Update and save settings
     public static void updateSettings(double conversionRate, double sellingMultiplier) {
         Settings newSettings = new Settings(conversionRate, sellingMultiplier);
         saveSettings(newSettings);
+    }
+
+    public static void updateConversionRate(double conversionRate) {
+        Settings current = getCurrentSettings();
+        double sellingMultiplier = current.getSellingMultiplier();
+        updateSettings(conversionRate, sellingMultiplier);
     }
 }

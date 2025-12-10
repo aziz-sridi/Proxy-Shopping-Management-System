@@ -1,7 +1,7 @@
 package Controller;
 
-import service.IClientService;
-import service.ClientServiceImpl;
+import service.api.IClientService;
+import service.impl.ClientServiceImpl;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;

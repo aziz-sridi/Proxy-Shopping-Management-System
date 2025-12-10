@@ -1,9 +1,9 @@
 package Controller;
 
-import service.IOrderService;
-import service.OrderServiceImpl;
-import service.IPaymentService;
-import service.PaymentServiceImpl;
+import service.api.IOrderService;
+import service.impl.OrderServiceImpl;
+import service.api.IPaymentService;
+import service.impl.PaymentServiceImpl;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -88,7 +88,7 @@ public class ClientHistoryController implements Initializable {
             orderData.addAll(orderService.getOrdersByClient(currentClient.getClientId()));
             paymentData.addAll(paymentService.getPaymentsByClient(currentClient.getClientId()));
         } catch (SQLException e) {
-            // Log error but don't show popup in embedded view
+            
             System.err.println("Error loading client history: " + e.getMessage());
         }
     }

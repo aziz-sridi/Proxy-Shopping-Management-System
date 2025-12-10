@@ -1,7 +1,9 @@
-package service;
+package service.impl;
 
+import service.api.IDeliveryOptionService;
 import dao.DeliveryOptionDAO;
 import model.DeliveryOption;
+import service.ValidationUtils;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -17,38 +19,20 @@ public class DeliveryOptionServiceImpl implements IDeliveryOptionService {
     private static final Logger LOGGER = Logger.getLogger(DeliveryOptionServiceImpl.class.getName());
     private final DeliveryOptionDAO deliveryOptionDAO;
 
-    /**
-     * Constructor with dependency injection for DeliveryOptionDAO.
-     * @param deliveryOptionDAO the DAO to use for database operations
-     */
     public DeliveryOptionServiceImpl(DeliveryOptionDAO deliveryOptionDAO) {
         this.deliveryOptionDAO = deliveryOptionDAO;
     }
 
-    /**
-     * Default constructor using default DeliveryOptionDAO.
-     */
     public DeliveryOptionServiceImpl() {
         this(new DeliveryOptionDAO());
     }
 
-    /**
-     * Get all delivery options from the database.
-     * @return list of all delivery options
-     * @throws SQLException if database error occurs
-     */
     @Override
     public List<DeliveryOption> getAllDeliveryOptions() throws SQLException {
         LOGGER.log(Level.INFO, "Fetching all delivery options");
         return deliveryOptionDAO.findAll();
     }
 
-    /**
-     * Get delivery option by ID.
-     * @param deliveryOptionId the delivery option ID
-     * @return the delivery option, or null if not found
-     * @throws SQLException if database error occurs
-     */
     @Override
     public DeliveryOption getDeliveryOptionById(int deliveryOptionId) throws SQLException {
         ValidationUtils.validatePositiveId(deliveryOptionId, "Delivery option ID");

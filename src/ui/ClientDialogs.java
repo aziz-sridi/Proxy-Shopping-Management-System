@@ -1,10 +1,10 @@
 package ui;
 
-import service.IClientService;
-import service.IOrderService;
-import service.OrderServiceImpl;
-import service.IShipmentService;
-import service.ShipmentServiceImpl;
+import service.api.IClientService;
+import service.api.IOrderService;
+import service.impl.OrderServiceImpl;
+import service.api.IShipmentService;
+import service.impl.ShipmentServiceImpl;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

@@ -1,6 +1,6 @@
 package ui.dialog;
 
-import service.IShipmentService;
+import service.api.IShipmentService;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;

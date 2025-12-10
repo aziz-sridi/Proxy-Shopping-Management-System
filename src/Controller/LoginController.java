@@ -57,7 +57,7 @@ public class LoginController {
         scene.getStylesheets().add(getClass().getResource("/ui/light-theme.css").toExternalForm());
 
         Stage stage = (Stage) usernameField.getScene().getWindow();
-        stage.setTitle("Proxy Shopping Management");
+        stage.setTitle("Proxy Shopping Management    please 20 ?");
         stage.setScene(scene);
     }
 }

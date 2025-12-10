@@ -1,10 +1,11 @@
-package service;
+package service.api;
 
 import model.Order;
 import model.Shipment;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Interface for Shipment service operations.
@@ -97,8 +98,9 @@ public interface IShipmentService {
     /**
      * Get complete financial summary for a shipment.
      * @param shipment the shipment
-     * @return financial summary
+     * @return financial summary as a map with keys: totalOrders, totalCostOfGoods, totalRevenue, 
+     *         totalExpenses, netProfit, transportationCost, otherCosts
      * @throws SQLException if database error occurs
      */
-    ShipmentServiceImpl.ShipmentFinancialSummary getFinancialSummary(Shipment shipment) throws SQLException;
+    Map<String, Double> getFinancialSummary(Shipment shipment) throws SQLException;
 }

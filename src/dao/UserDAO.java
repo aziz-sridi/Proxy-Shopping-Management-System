@@ -108,7 +108,6 @@ public class UserDAO {
         return getUserByUsername(username) != null;
     }
 
-    // Helper method to map ResultSet to User
     private User mapResultSetToUser(ResultSet rs) throws SQLException {
         return new User(
                 rs.getInt("user_id"),

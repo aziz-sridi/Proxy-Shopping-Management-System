@@ -1,44 +1,37 @@
-package service;
+package service.impl;
 
+import service.api.ICurrencyRateService;
 import dao.CurrencyRateDAO;
 import model.CurrencyRate;
+import util.SettingsManager;
+import util.CurrencyRateFetcher;
 
+import java.io.IOException;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * Service layer for CurrencyRate-related business logic.
- * Handles validation, logging, and delegates CRUD operations to CurrencyRateDAO.
- */
 public class CurrencyRateServiceImpl implements ICurrencyRateService {
 
     private static final Logger LOGGER = Logger.getLogger(CurrencyRateServiceImpl.class.getName());
     private final CurrencyRateDAO currencyRateDAO;
+    private final CurrencyRateFetcher currencyRateFetcher;
 
-    /**
-     * Constructor with dependency injection for CurrencyRateDAO.
-     * @param currencyRateDAO the DAO to use for database operations
-     */
     public CurrencyRateServiceImpl(CurrencyRateDAO currencyRateDAO) {
-        this.currencyRateDAO = currencyRateDAO;
+        this(currencyRateDAO, new CurrencyRateFetcher(Duration.ofSeconds(10)));
     }
 
-    /**
-     * Default constructor using default CurrencyRateDAO.
-     */
+    public CurrencyRateServiceImpl(CurrencyRateDAO currencyRateDAO, CurrencyRateFetcher currencyRateFetcher) {
+        this.currencyRateDAO = currencyRateDAO;
+        this.currencyRateFetcher = currencyRateFetcher;
+    }
+
     public CurrencyRateServiceImpl() {
         this(new CurrencyRateDAO());
     }
 
-    /**
-     * Get rate history for a currency pair.
-     * @param baseCurrency the base currency code (e.g., "EUR")
-     * @param targetCurrency the target currency code (e.g., "TND")
-     * @return list of historical currency rates
-     * @throws SQLException if database error occurs
-     */
     @Override
     public List<CurrencyRate> getRateHistory(String baseCurrency, String targetCurrency) throws SQLException {
         validateCurrencyPair(baseCurrency, targetCurrency);
@@ -46,13 +39,6 @@ public class CurrencyRateServiceImpl implements ICurrencyRateService {
         return currencyRateDAO.findHistory(baseCurrency, targetCurrency);
     }
 
-    /**
-     * Get the latest rate for a currency pair.
-     * @param baseCurrency the base currency code
-     * @param targetCurrency the target currency code
-     * @return the latest currency rate, or null if not found
-     * @throws SQLException if database error occurs
-     */
     @Override
     public CurrencyRate getLatestRate(String baseCurrency, String targetCurrency) throws SQLException {
         validateCurrencyPair(baseCurrency, targetCurrency);
@@ -60,12 +46,6 @@ public class CurrencyRateServiceImpl implements ICurrencyRateService {
         return currencyRateDAO.findLatest(baseCurrency, targetCurrency);
     }
 
-    /**
-     * Add a new currency rate with validation.
-     * @param rate the currency rate to add
-     * @throws SQLException if database error occurs
-     * @throws IllegalArgumentException if validation fails
-     */
     @Override
     public void addRate(CurrencyRate rate) throws SQLException {
         validateCurrencyRate(rate);
@@ -75,17 +55,17 @@ public class CurrencyRateServiceImpl implements ICurrencyRateService {
         LOGGER.log(Level.INFO, "Currency rate added successfully");
     }
 
-    /**
-     * Convert amount using the latest rate.
-     * @param amount the amount to convert
-     * @param baseCurrency the source currency
-     * @param targetCurrency the target currency
-     * @return the converted amount, or the original amount if no rate found
-     * @throws SQLException if database error occurs
-     */
     @Override
     public double convert(double amount, String baseCurrency, String targetCurrency) throws SQLException {
         CurrencyRate rate = getLatestRate(baseCurrency, targetCurrency);
+        if (rate == null) {
+            try {
+                LOGGER.log(Level.INFO, "No rate cached for {0}/{1}, fetching from API", new Object[]{baseCurrency, targetCurrency});
+                rate = refreshLatestRateFromApi(baseCurrency, targetCurrency);
+            } catch (IOException e) {
+                LOGGER.log(Level.WARNING, "Failed to fetch rate from API, returning original amount: " + e.getMessage());
+            }
+        }
         if (rate == null) {
             LOGGER.log(Level.WARNING, "No rate found for {0}/{1}, returning original amount", 
                       new Object[]{baseCurrency, targetCurrency});
@@ -97,12 +77,26 @@ public class CurrencyRateServiceImpl implements ICurrencyRateService {
         return convertedAmount;
     }
 
-    /**
-     * Validate currency pair parameters.
-     * @param baseCurrency the base currency code
-     * @param targetCurrency the target currency code
-     * @throws IllegalArgumentException if validation fails
-     */
+    @Override
+    public CurrencyRate refreshLatestRateFromApi(String baseCurrency, String targetCurrency) throws SQLException, IOException {
+        validateCurrencyPair(baseCurrency, targetCurrency);
+        double latestRate = currencyRateFetcher.fetchLatestRate(baseCurrency, targetCurrency);
+
+        CurrencyRate rate = new CurrencyRate();
+        rate.setBaseCurrency(baseCurrency);
+        rate.setTargetCurrency(targetCurrency);
+        rate.setOriginalRate(latestRate);
+        rate.setCustomRate(latestRate); // allow overriding later via UI if needed
+
+        LOGGER.log(Level.INFO, "Persisting fetched currency rate {0}/{1} = {2}",
+                new Object[]{baseCurrency, targetCurrency, latestRate});
+        currencyRateDAO.insert(rate);
+
+        // Keep settings conversion rate in sync for parts of the app that rely on it
+        SettingsManager.updateConversionRate(latestRate);
+        return getLatestRate(baseCurrency, targetCurrency);
+    }
+
     private void validateCurrencyPair(String baseCurrency, String targetCurrency) {
         if (baseCurrency == null || baseCurrency.trim().isEmpty()) {
             throw new IllegalArgumentException("Base currency is required");
@@ -112,11 +106,6 @@ public class CurrencyRateServiceImpl implements ICurrencyRateService {
         }
     }
 
-    /**
-     * Validate currency rate data before database operations.
-     * @param rate the currency rate to validate
-     * @throws IllegalArgumentException if validation fails
-     */
     private void validateCurrencyRate(CurrencyRate rate) {
         if (rate == null) {
             throw new IllegalArgumentException("Currency rate cannot be null");

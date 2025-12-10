@@ -1,7 +1,7 @@
 package Controller;
 
-import service.IShipmentService;
-import service.ShipmentServiceImpl;
+import service.api.IShipmentService;
+import service.impl.ShipmentServiceImpl;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
